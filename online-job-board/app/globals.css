@@ -29,7 +29,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .page-head{margin-bottom:20px}
 .page-head h1{font-size:30px;letter-spacing:-.8px;margin:5px 0}
 
-/* cards, panels, tables */
+/* cards, panels and tables */
 .panel,.card,.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
 .panel{margin-bottom:16px}
 .panel h2{font-size:17px;margin:0 0 12px}
@@ -57,7 +57,7 @@ tr:last-child td{border:0}
 .field textarea{min-height:90px}
 td select{width:auto}
 
-/* sign-in + 403 */
+/* sign in  */
 .authwrap{min-height:100vh;display:grid;place-items:center;padding:24px}
 .auth-card{width:min(100%,540px);padding:28px}
 .auth-card h1{margin:7px 0;font-size:30px}
@@ -69,7 +69,7 @@ td select{width:auto}
 .confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 .confirm-cancel{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
 
-/* review screens (verification + job review) */
+/* review screens (verification and job review) */
 .split{display:grid;grid-template-columns:320px 1fr;gap:16px}
 .item{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);margin-bottom:8px;font-weight:400}
 .item.sel{border-color:var(--accent);background:var(--soft)}
