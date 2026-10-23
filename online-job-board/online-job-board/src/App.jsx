@@ -1,23 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Activity, ArrowDownRight, ArrowLeft, ArrowRight, Bell, BriefcaseBusiness,
-  Building2, Check, CheckCircle2, ChevronDown, ClipboardList, Clock3,
-  FileText, Filter, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2,
-  ShieldCheck, SlidersHorizontal, Users, X, Eye, Pencil, Ban, CircleCheck,
-  CircleX, MapPin, CalendarDays, Mail, ExternalLink, Sparkles, TrendingUp
+  
 } from "lucide-react";
 
-/*
- * TalentBridge — COM311 frontend prototype
- * ---------------------------------------------------------------
- * This single React component demonstrates the employer and admin
- * requirements from the supplied issue backlog. It uses localStorage
- * for browser-only persistence and seeded sample records.
- *
- * IMPORTANT: this is not production authentication or secure access
- * control. A real system needs a backend, server-side authorisation,
- * password hashing, database rules, audit logging and secure sessions.
- */
+//This part is for authentication
 
 const STORAGE_KEY = "talentbridge-demo-v1";
 const demoJobs = [
@@ -157,7 +143,7 @@ export default function App() {
   function login(event) {
     event.preventDefault();
     setLoginError("");
-    // Demo-only credentials. Never use this pattern for real authentication.
+    
     const expected = loginRole === "admin" ? "admin@talentbridge.demo" : "employer@demo.com";
     if (loginEmail.trim().toLowerCase() !== expected || loginPassword !== "demo123") {
       setLoginError("Those demo credentials do not match. Check the example below and try again.");
