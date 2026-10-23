@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import BrandMark from "@/app/components/brand-mark";
@@ -13,83 +12,34 @@ type AdminAuthFormProps = {
   token?: string;
 };
 
-const modeDetails: Record<AdminAuthMode, { title: string; lead: string; endpoint: string }> = {
+const modeDetails: Record<AdminAuthMode, { title: string; lead: string }> = {
   login: {
     title: "Administrator sign in",
     lead: "Sign in to continue to the administration workspace.",
-    endpoint: "/api/admin/login",
   },
   register: {
     title: "Create an administrator account",
     lead: "Administrator registration is only available to people with the private setup key.",
-    endpoint: "/api/admin/register",
   },
   forgot: {
     title: "Reset your password",
     lead: "Enter your administrator email and we’ll send a reset link if it exists.",
-    endpoint: "/api/admin/forgot-password",
   },
   reset: {
     title: "Choose a new password",
     lead: "Set a new password for your administrator account.",
-    endpoint: "/api/admin/reset-password",
   },
 };
 
 export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
-  const router = useRouter();
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const details = modeDetails[mode];
   const hasToken = mode !== "reset" || Boolean(token);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setSuccess("");
-    setPending(true);
-
-    const formData = new FormData(event.currentTarget);
-    const payload: Record<string, string> = {};
-    for (const key of ["fullName", "email", "password", "setupKey"]) {
-      const value = formData.get(key);
-      if (typeof value === "string" && value) payload[key] = value;
-    }
-    if (mode === "reset" && token) payload.token = token;
-
-    try {
-      const response = await fetch(details.endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = (await response.json().catch(() => null)) as
-        | { error?: string; message?: string }
-        | null;
-
-      if (!response.ok) {
-        setError(result?.error ?? "We couldn’t complete that request. Please try again.");
-        return;
-      }
-
-      if (mode === "forgot") {
-        setSuccess(result?.message ?? "If an account exists for that email, a reset link will be sent.");
-        return;
-      }
-
-      if (mode === "reset") {
-        setSuccess("Your password has been updated.");
-        return;
-      }
-      router.replace("/admin/dashboard");
-      router.replace("/admin/dashboard");
-    } catch {
-      setError("Unable to connect right now. Check your connection and try again.");
-    } finally {
-      setPending(false);
-    }
+    setError("Backend integration is not connected yet. Please try again after it is set up.");
   }
 
   const submitLabel = {
@@ -98,13 +48,6 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
     forgot: "Send reset link",
     reset: "Update password",
   }[mode];
-  const pendingLabel = {
-    login: "Signing in...",
-    register: "Creating account...",
-    forgot: "Sending link...",
-    reset: "Updating password...",
-  }[mode];
-
   return (
     <main className="employer-auth-page employer-auth-login-page admin-auth-page">
       <Link className="employer-brand" href="/admin/login" aria-label="OnlineJobBoard administrator home">
@@ -123,13 +66,6 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
               <p className="employer-auth-error" role="alert">
                 This reset link is missing or invalid. Request a new one to continue.
               </p>
-            ) : success ? (
-              <div className="employer-auth-fields">
-                <p className="employer-auth-success" role="status">{success}</p>
-                <Link className="employer-auth-submit" href="/admin/login">
-                  Return to sign in
-                </Link>
-              </div>
             ) : (
               <form className="employer-auth-fields" onSubmit={handleSubmit}>
                 {mode === "register" && (
@@ -224,8 +160,8 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
 
                 {error && <p className="employer-auth-error" role="alert">{error}</p>}
 
-                <button className="employer-auth-submit" type="submit" disabled={pending}>
-                  {pending ? pendingLabel : submitLabel}
+                <button className="employer-auth-submit" type="submit">
+                  {submitLabel}
                 </button>
               </form>
             )}
@@ -254,7 +190,7 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                 <Link className="employer-auth-link" href="/admin/login">Sign in</Link>
               </p>
             )}
-            {mode === "reset" && !success && (
+            {mode === "reset" && (
               <p className="employer-auth-switch">
                 <Link className="employer-auth-link" href="/admin/forgot-password">
                   Request another reset link
