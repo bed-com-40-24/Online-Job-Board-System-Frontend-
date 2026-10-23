@@ -1,4 +1,4 @@
-'use client'; // This page uses browser-side hooks and click handlers.
+'use client'; // Runs in the browser, it needs hooks, click handlers and the client side store
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,24 +6,27 @@ import { HOME } from '@/lib/permissions';
 import { useStore } from '@/lib/store';
 import type { Role } from '@/lib/data';
 
+//the user picks a role instead of entering credentials
 export default function LoginPage() {
   const router = useRouter();
-  // The role and ready flag tell us if a saved session is already available.
   const { role, ready, login } = useStore();
 
-  // Send users with an existing session straight to their workspace.
-  // Wait until the saved session has loaded before checking the role.
+  /* If a session already exists (e.g. page refresh), skip the login screen
+  and send the user straight to their role's home page
+  We wait for 'ready' so we don't redirect before the saved session has loaded */
   useEffect(() => {
     if (ready && role) router.replace(HOME[role]);
   }, [ready, role, router]);
 
-  // Save the selected role, then open that role's home page.
+  /* Saves the chosen role in the store, then go to that role's home page
+  router.replace (not push) stops the Back button returning to the login page */
   const signIn = (nextRole: Role) => {
     login(nextRole);
     router.replace(HOME[nextRole]);
   };
 
-  // Hide the login buttons while the session loads or the page redirects.
+  /* While the store is loading or a redirect is about to happen,
+  show a loading message so the login buttons don't flash on screen */
   if (!ready || role) {
     return (
       <main className="authwrap">
