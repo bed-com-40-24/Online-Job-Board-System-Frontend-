@@ -1,5 +1,9 @@
 "use client";
+import ApplicantDetailsModal from "../components/applications/ApplicantDetailsModal";
 
+import ApplicationsTable from "../components/applications/ApplicationsTable";
+import ApplicationStats from "../components/applications/ApplicationStats";
+import ApplicationFilters from "../components/applications/ApplicationFilters";
 import {
   useEffect,
   useMemo,
@@ -14,6 +18,7 @@ import type {
 import {
   loadApplications,
   saveApplications,
+  resetApplications,
 } from "../lib/applicationStorage";
 
 import type {
@@ -79,10 +84,10 @@ function isEmployerProfile(value: unknown): value is EmployerProfile {
     typeof profile.website === "string" &&
     typeof profile.location === "string" &&
     typeof profile.overview === "string" &&
-    typeof profile.picture === "string"
+    (typeof profile.picture === "string" ||
+      typeof profile.picture === "undefined")
   );
 }
-
 export default function ApplicationsPage() {
   // Applications
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -533,78 +538,12 @@ export default function ApplicationsPage() {
           )}
 
           {/* STATISTICS */}
-          <section
-            className="stats-grid"
-            aria-label="Application statistics"
-          >
-            <article className="stat-card">
-              <div className="stat-top">
-                <span>Total Applications</span>
-                <span className="stat-icon" aria-hidden="true">
-                  ▤
-                </span>
-              </div>
-
-              <div className="stat-value">
-                {applicants.length}
-              </div>
-
-              <span className="muted">
-                Applications received
-              </span>
-            </article>
-
-            <article className="stat-card">
-              <div className="stat-top">
-                <span>Pending Review</span>
-                <span className="stat-icon" aria-hidden="true">
-                  ◷
-                </span>
-              </div>
-
-              <div className="stat-value">
-                {pendingCount}
-              </div>
-
-              <span className="muted">
-                Awaiting a decision
-              </span>
-            </article>
-
-            <article className="stat-card">
-              <div className="stat-top">
-                <span>Shortlisted</span>
-                <span className="stat-icon" aria-hidden="true">
-                  ✓
-                </span>
-              </div>
-
-              <div className="stat-value">
-                {shortlistedCount}
-              </div>
-
-              <span className="muted">
-                Selected candidates
-              </span>
-            </article>
-
-            <article className="stat-card">
-              <div className="stat-top">
-                <span>Rejected</span>
-                <span className="stat-icon" aria-hidden="true">
-                  ×
-                </span>
-              </div>
-
-              <div className="stat-value">
-                {rejectedCount}
-              </div>
-
-              <span className="muted">
-                Unsuccessful applications
-              </span>
-            </article>
-          </section>
+<ApplicationStats
+  total={applicants.length}
+  pending={pendingCount}
+  shortlisted={shortlistedCount}
+  rejected={rejectedCount}
+/>
 
           {/* APPLICATIONS TABLE */}
           <section className="applications-card">
@@ -616,171 +555,64 @@ export default function ApplicationsPage() {
                 </span>
               </div>
 
-              <span className="result-count">
-                {filteredApplicants.length} results
-              </span>
+              <div className="card-heading-actions">
+  <span className="result-count">
+    {filteredApplicants.length} results
+  </span>
+
+  <button
+    type="button"
+    className="button button-secondary"
+    onClick={() => {
+      const confirmed = window.confirm(
+        "Reset all application data to the original demo data? Your application status changes will be lost."
+      );
+
+      if (!confirmed) return;
+
+      try {
+        const originalApplicants = resetApplications();
+        setApplicants(originalApplicants);
+        setSearchTerm("");
+        setStatusFilter("All");
+        setFeedback("Demo applications have been reset successfully.");
+      } catch (error) {
+        console.error("Unable to reset demo applications:", error);
+        setFeedback("Could not reset the demo applications. Please try again.");
+      }
+    }}
+  >
+    Reset Data
+  </button>
+</div>
             </div>
 
-            {/* SEARCH AND FILTER */}
-            <div className="filters">
-              <label className="search-box">
-                <span aria-hidden="true">⌕</span>
-
-                <input
-                  type="search"
-                  placeholder="Search applicants, jobs or skills..."
-                  value={searchTerm}
-                  onChange={(event) =>
-                    setSearchTerm(event.target.value)
-                  }
-                  aria-label="Search applicants"
-                />
-              </label>
-
-              <label className="filter-select">
-                <span className="sr-only">
-                  Filter by application status
-                </span>
-
-                <select
-                  value={statusFilter}
-                  onChange={(event) =>
-                    setStatusFilter(event.target.value)
-                  }
-                >
-                  <option value="All">All statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Shortlisted">Shortlisted</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
-              </label>
-            </div>
+            <ApplicationFilters
+  searchTerm={searchTerm}
+  statusFilter={statusFilter}
+  onSearchChange={setSearchTerm}
+  onStatusChange={setStatusFilter}
+/>
 
             {/* TABLE */}
-            <div className="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">APPLICANT</th>
-                    <th scope="col">POSITION</th>
-                    <th scope="col">APPLIED DATE</th>
-                    <th scope="col">STATUS</th>
-                    <th scope="col">ACTIONS</th>
-                  </tr>
-                </thead>
+<ApplicationsTable
+  applicants={filteredApplicants}
+  onView={setSelectedApplicant}
+  onUpdateStatus={updateApplicantStatus}
+  getInitials={getInitials}
+/>
 
-                <tbody>
-                  {filteredApplicants.map((applicant) => (
-                    <tr key={applicant.id}>
-                      <td>
-                        <div className="applicant-cell">
-                          <div className="person-avatar">
-                            {getInitials(applicant.name)}
-                          </div>
-
-                          <div>
-                            <strong>{applicant.name}</strong>
-                            <span className="muted">
-                              {applicant.email}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span className="position-name">
-                          {applicant.position}
-                        </span>
-                      </td>
-
-                      <td>{applicant.appliedDate}</td>
-
-                      <td>
-                        <span
-                          className={`status ${statusClass[applicant.status]}`}
-                        >
-                          <span
-                            className="status-dot"
-                            aria-hidden="true"
-                          />
-                          {applicant.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="action-buttons">
-                          <button
-                            type="button"
-                            className="button button-secondary"
-                            onClick={() =>
-                              setSelectedApplicant(applicant)
-                            }
-                          >
-                            View
-                          </button>
-
-                          {applicant.status !== "Shortlisted" && (
-                            <button
-                              type="button"
-                              className="button button-primary"
-                              onClick={() =>
-                                updateApplicantStatus(
-                                  applicant.id,
-                                  "Shortlisted"
-                                )
-                              }
-                            >
-                              Shortlist
-                            </button>
-                          )}
-
-                          {applicant.status !== "Rejected" && (
-                            <button
-                              type="button"
-                              className="button button-danger"
-                              onClick={() =>
-                                updateApplicantStatus(
-                                  applicant.id,
-                                  "Rejected"
-                                )
-                              }
-                            >
-                              Reject
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* EMPTY RESULTS */}
-            {filteredApplicants.length === 0 && (
-              <div className="empty-state">
-                <div className="empty-icon" aria-hidden="true">
-                  ⌕
-                </div>
-
-                <h3>No applications found</h3>
-
-                <p>
-                  Try another search term or change the status filter.
-                </p>
-
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("All");
-                  }}
-                >
-                  Clear filters
-                </button>
-              </div>
-            )}
+<button
+  type="button"
+  className="button button-primary"
+  onClick={() => {
+    setSearchTerm("");
+    setStatusFilter("All");
+  }}
+  hidden={filteredApplicants.length !== 0}
+>
+  Clear filters
+</button>
           </section>
 
           <footer className="footer-note">
@@ -790,149 +622,14 @@ export default function ApplicationsPage() {
       </main>
 
       {/* APPLICANT DETAILS MODAL */}
-      {selectedApplicant && (
-        <div
-          className="modal-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setSelectedApplicant(null);
-            }
-          }}
-        >
-          <section
-            className="applicant-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="applicant-modal-title"
-          >
-            <div className="modal-heading">
-              <div>
-                <p className="eyebrow">APPLICATION DETAILS</p>
-                <h2 id="applicant-modal-title">
-                  Applicant Profile
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                className="close-button"
-                aria-label="Close applicant details"
-                onClick={() => setSelectedApplicant(null)}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="modal-person">
-              <div className="large-avatar">
-                {getInitials(selectedApplicant.name)}
-              </div>
-
-              <div>
-                <h3>{selectedApplicant.name}</h3>
-
-                <span className="muted">
-                  {selectedApplicant.position}
-                </span>
-
-                <span
-                  className={`status ${statusClass[selectedApplicant.status]}`}
-                >
-                  <span
-                    className="status-dot"
-                    aria-hidden="true"
-                  />
-                  {selectedApplicant.status}
-                </span>
-              </div>
-            </div>
-
-            <div className="detail-grid">
-              <div className="detail-item">
-                <span>Email address</span>
-                <strong>{selectedApplicant.email}</strong>
-              </div>
-
-              <div className="detail-item">
-                <span>Phone number</span>
-                <strong>{selectedApplicant.phone}</strong>
-              </div>
-
-              <div className="detail-item">
-                <span>Location</span>
-                <strong>{selectedApplicant.location}</strong>
-              </div>
-
-              <div className="detail-item">
-                <span>Experience</span>
-                <strong>{selectedApplicant.experience}</strong>
-              </div>
-
-              <div className="detail-item">
-                <span>Education</span>
-                <strong>{selectedApplicant.education}</strong>
-              </div>
-
-              <div className="detail-item">
-                <span>Application date</span>
-                <strong>{selectedApplicant.appliedDate}</strong>
-              </div>
-            </div>
-
-            <div className="skills-section">
-              <h4>Skills</h4>
-
-              <div className="skill-list">
-                {selectedApplicant.skills.map((skill) => (
-                  <span className="skill-chip" key={skill}>
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => setSelectedApplicant(null)}
-              >
-                Close
-              </button>
-
-              {selectedApplicant.status !== "Rejected" && (
-                <button
-                  type="button"
-                  className="button button-danger"
-                  onClick={() =>
-                    updateApplicantStatus(
-                      selectedApplicant.id,
-                      "Rejected"
-                    )
-                  }
-                >
-                  Reject application
-                </button>
-              )}
-
-              {selectedApplicant.status !== "Shortlisted" && (
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={() =>
-                    updateApplicantStatus(
-                      selectedApplicant.id,
-                      "Shortlisted"
-                    )
-                  }
-                >
-                  Shortlist applicant
-                </button>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
+{selectedApplicant && (
+  <ApplicantDetailsModal
+    applicant={selectedApplicant}
+    onClose={() => setSelectedApplicant(null)}
+    onUpdateStatus={updateApplicantStatus}
+    getInitials={getInitials}
+  />
+)}
 
       {/* ORGANISATION PROFILE PAGE */}
       {showProfile && (
