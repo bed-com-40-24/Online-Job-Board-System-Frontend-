@@ -3,13 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --navy: #071f2b; /* darker navy to match prototype */
+  --sidebar-width: 260px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +25,116 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Topbar and sidebar styles to match screenshot */
+.topbar {
+  background: var(--navy);
+  color: #ffffff;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+}
+
+.sidebar {
+  background: var(--navy);
+  color: #ffffff;
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  padding: 20px 18px;
+  box-sizing: border-box;
+  position: relative;
+  transition: width 220ms ease;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-link {
+  display: block;
+  color: rgba(255,255,255,0.95);
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.04);
+  color: #ffffff;
+}
+
+.sidebar-link[aria-current="page"] {
+  background: rgba(255,255,255,0.08);
+}
+
+
+.back-button {
+  background: #ffffff; /* white circular background like screenshot */
+  border: 0;
+  color: var(--navy); /* navy arrow */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  cursor: pointer;
+  margin-right: 10px;
+  border-radius: 9999px;
+  box-shadow: 0 6px 18px rgba(6,18,30,0.25);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.back-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(6,18,30,0.28);
+}
+
+.back-button:focus {
+  outline: 2px solid rgba(255,255,255,0.15);
+}
+
+.site-title {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* Main content area */
+.app-main {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: calc(100vh - 64px);
+}
+
+/* Collapsed sidebar state */
+.sidebar.collapsed {
+  width: 72px;
+}
+
+/* Toggle button that sits on the right edge of the sidebar */
+.sidebar-toggle {
+  position: absolute;
+  right: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #0ea5a8; /* teal accent similar to screenshot */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(6,18,30,0.25);
+  border: 0;
+  color: white;
+  cursor: pointer;
+}
+
+.sidebar-toggle:hover {
+  transform: translateY(-50%) translateY(-2px);
 }
