@@ -1,3 +1,7 @@
+import { redirect } from "next/navigation";
+
+export default function Home() {
+  redirect("/employer/login");
 'use client';
 
 import { useEffect } from 'react';
