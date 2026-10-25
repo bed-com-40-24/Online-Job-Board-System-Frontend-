@@ -1,20 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function EmployerLogoutButton() {
-  const [error, setError] = useState("");
+  const router = useRouter();
 
   function signOut() {
-    setError("Sign out will be available after backend integration is set up.");
+    document.cookie = "employer_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
+    router.push("/employer/login");
+    router.refresh();
   }
 
   return (
-    <>
-      <button className="employer-dashboard-signout" type="button" onClick={signOut}>
-        Sign out
-      </button>
-      {error && <span className="admin-dashboard-error" role="alert">{error}</span>}
-    </>
+    <button className="employer-dashboard-signout" type="button" onClick={signOut}>
+      Sign out
+    </button>
   );
 }

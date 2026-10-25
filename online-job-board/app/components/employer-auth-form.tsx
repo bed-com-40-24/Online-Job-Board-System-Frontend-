@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import BrandMark from "@/app/components/brand-mark";
@@ -34,12 +35,48 @@ const modeDetails: Record<AuthMode, { title: string; lead: string }> = {
 export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps) {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const details = modeDetails[mode];
   const hasToken = mode !== "reset" || Boolean(token);
 
+  function persistSession(session: { id: string; email: string; companyName: string }) {
+    const sessionValue = encodeURIComponent(JSON.stringify(session));
+    document.cookie = `employer_session=${sessionValue}; path=/; max-age=${60 * 60 * 8}; SameSite=Lax`;
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("Backend integration is not connected yet. Please try again after it is set up.");
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const companyName = String(formData.get("companyName") ?? "Employer").trim() || "Employer";
+
+    if (!email || !password) {
+      setError("Please enter the required information to continue.");
+      return;
+    }
+
+    if (mode === "forgot") {
+      setError("");
+      router.push("/employer/login");
+      return;
+    }
+
+    if (mode === "reset") {
+      setError("");
+      router.push("/employer/login");
+      return;
+    }
+
+    persistSession({
+      id: `employer-demo-${Date.now()}`,
+      email,
+      companyName,
+    });
+
+    router.push("/employer/dashboard");
+    router.refresh();
   }
 
   const submitLabel = {

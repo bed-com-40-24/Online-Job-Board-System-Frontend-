@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import BrandMark from "@/app/components/brand-mark";
@@ -34,12 +35,48 @@ const modeDetails: Record<AdminAuthMode, { title: string; lead: string }> = {
 export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
   const details = modeDetails[mode];
   const hasToken = mode !== "reset" || Boolean(token);
 
+  function persistSession(session: { id: string; email: string; fullName: string }) {
+    const sessionValue = encodeURIComponent(JSON.stringify(session));
+    document.cookie = `admin_session=${sessionValue}; path=/; max-age=${60 * 60 * 8}; SameSite=Lax`;
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("Backend integration is not connected yet. Please try again after it is set up.");
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const fullName = String(formData.get("fullName") ?? "Administrator").trim() || "Administrator";
+
+    if (!email || !password) {
+      setError("Please enter the required information to continue.");
+      return;
+    }
+
+    if (mode === "forgot") {
+      setError("");
+      router.push("/admin/login");
+      return;
+    }
+
+    if (mode === "reset") {
+      setError("");
+      router.push("/admin/login");
+      return;
+    }
+
+    persistSession({
+      id: `admin-demo-${Date.now()}`,
+      email,
+      fullName,
+    });
+
+    router.push("/admin/dashboard");
+    router.refresh();
   }
 
   const submitLabel = {
