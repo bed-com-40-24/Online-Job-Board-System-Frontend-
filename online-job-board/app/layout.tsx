@@ -4,22 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "OnlineJobBoard | Job Board",
   description: "Find opportunities across industries or manage your hiring with OnlineJobBoard.",
-import './globals.css';
-import { StoreProvider } from '@/lib/store';
-
-export const metadata = {
-  title: 'Online Job Board',
-  description: 'Manage job applications, employer verification, and job posting reviews.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
-    <html lang="en">
-      <body>
-        <StoreProvider>{children}</StoreProvider>
-      </body>
     </html>
   );
 }
