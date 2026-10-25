@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const appUrl = process.env.APP_URL;
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['192.168.56.1'],
   turbopack: {
     root: process.cwd(),
   },
