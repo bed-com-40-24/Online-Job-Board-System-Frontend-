@@ -1,0 +1,14 @@
+.responsive-layout,
+.ui-consistent {
+  display: contents;
+}
+
+.performance-boundary {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .responsive-layout {
+    min-width: 0;
+  }
+}
