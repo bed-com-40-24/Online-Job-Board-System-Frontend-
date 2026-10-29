@@ -1,14 +1,14 @@
-import type { AppStatus, JobStatus, OrgStatus } from '@/lib/data';
+import type { AccountStatus, AppStatus, JobStatus, OrgStatus } from '@/lib/data';
 
 type BadgeProps = {
-  status: AppStatus | JobStatus | OrgStatus;
+  status: AccountStatus | AppStatus | JobStatus | OrgStatus;
 };
 
 export default function Badge({ status }: BadgeProps) {
   const tone =
-    status === 'Accepted' || status === 'Verified' || status === 'Published'
+    status === 'Accepted' || status === 'Verified' || status === 'Published' || status === 'Active'
       ? 'good'
-      : status === 'Rejected'
+      : status === 'Rejected' || status === 'Suspended'
         ? 'bad'
         : status === 'Pending' || status === 'Pending verification' || status === 'In review'
           ? 'warn'
