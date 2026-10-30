@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import HistoryNavigation from "@/app/components/HistoryNavigation";
 
 export default function NewVacancyPage() {
 const [message, setMessage] = useState("");
@@ -16,8 +17,7 @@ if (!form.checkValidity()) {
   return;
 }
 
-setMessage("Your job vacancy form has been submitted successfully!");
-form.reset();
+setMessage("The form is valid, but no vacancy was saved because vacancy storage is not connected.");
 
 }
 
@@ -65,6 +65,8 @@ return (
         </Link>
       </div>
 
+      <HistoryNavigation fallbackHref="/employer/dashboard" />
+
       <div className="flex items-center gap-3">
         <div className="hidden h-9 w-px bg-slate-200 sm:block" />
         <div className="flex items-center gap-2.5">
@@ -84,6 +86,9 @@ return (
         <p className="text-sm font-medium text-blue-700">Employer Workspace / Vacancies / Create</p>
         <h1 className="mt-2 text-3xl font-bold text-gray-900">Create Job Vacancy</h1>
         <p className="mt-2 text-gray-600">Enter the details below to create a job vacancy.</p>
+        <p role="note" className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+          Vacancy creation is not connected to the application database yet.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">

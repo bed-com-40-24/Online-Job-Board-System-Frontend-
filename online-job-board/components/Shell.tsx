@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { HOME, can } from '@/lib/permissions';
 import { useStore } from '@/lib/store';
+import { logoutAdmin, logoutEmployer } from '@/app/actions/auth';
+import HistoryNavigation from '@/app/components/HistoryNavigation';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,9 +26,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       : []),
   ];
 
-  const signOut = () => {
+  const signOut = async () => {
+    if (role === 'admin') {
+      await logoutAdmin();
+    } else {
+      await logoutEmployer();
+    }
     logout();
-    router.replace('/login');
+    router.replace(role === 'admin' ? '/admin/login' : '/employer/login');
+    router.refresh();
   };
 
   return (
@@ -36,8 +44,9 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <span className="logo">OJB</span>
           Online Job Board
         </Link>
+        <HistoryNavigation fallbackHref={HOME[role]} />
         <div className="user-chip">
-          <span>{role === 'employer' ? 'Lakeview Technologies' : 'Administrator'}</span>
+          <span>{role === 'employer' ? 'Employer workspace' : 'Administrator'}</span>
           <button className="secondary" type="button" onClick={signOut}>
             Sign out
           </button>
