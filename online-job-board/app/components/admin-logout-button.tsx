@@ -1,13 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { logoutAdmin } from "@/app/actions/auth";
+import { useStore } from "@/lib/store";
 
 export default function AdminLogoutButton() {
   const router = useRouter();
+  const { logout } = useStore();
 
-  function signOut() {
-    document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
-    router.push("/admin/login");
+  async function signOut() {
+    await logoutAdmin();
+    logout();
+    router.replace("/admin/login");
     router.refresh();
   }
 

@@ -15,59 +15,15 @@ function sessionKey() {
   const secret = process.env.SESSION_SECRET;
 
   if (!secret || secret.length < 32) {
-    return null;
+    throw new Error("SESSION_SECRET must contain at least 32 characters.");
   }
 
   return new TextEncoder().encode(secret);
 }
 
-function encodeSessionValue(session: AdminSession) {
-  return encodeURIComponent(
-    JSON.stringify({
-      id: session.id,
-      email: session.email,
-      fullName: session.fullName,
-      createdAt: Date.now(),
-    }),
-  );
-}
-
-function parseSessionValue(value: string): AdminSession | null {
-  try {
-    const decoded = JSON.parse(decodeURIComponent(value)) as Partial<AdminSession> & { createdAt?: number };
-
-    if (
-      typeof decoded.id !== "string" ||
-      typeof decoded.email !== "string" ||
-      typeof decoded.fullName !== "string"
-    ) {
-      return null;
-    }
-
-    return {
-      id: decoded.id,
-      email: decoded.email,
-      fullName: decoded.fullName,
-    };
-  } catch {
-    return null;
-  }
-}
-
 export async function createAdminSession(admin: AdminSession) {
   const secret = sessionKey();
   const cookieStore = await cookies();
-
-  if (!secret) {
-    cookieStore.set(cookieName, encodeSessionValue(admin), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: sessionDurationSeconds,
-    });
-    return;
-  }
 
   const token = await new SignJWT({ email: admin.email, fullName: admin.fullName })
     .setProtectedHeader({ alg: "HS256" })
@@ -93,9 +49,6 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   if (!token) return null;
 
   const secret = sessionKey();
-  if (!secret) {
-    return parseSessionValue(token);
-  }
 
   try {
     const { payload } = await jwtVerify(token, secret, {

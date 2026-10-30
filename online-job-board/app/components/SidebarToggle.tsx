@@ -1,21 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function SidebarToggle() {
   const [collapsed, setCollapsed] = useState(false);
 
-  useEffect(() => {
-    const sb = document.querySelector(".sidebar");
-    if (!sb) return;
-    setCollapsed(sb.classList.contains("collapsed"));
-  }, []);
-
   function toggle() {
     const sb = document.querySelector(".sidebar");
     if (!sb) return;
-    sb.classList.toggle("collapsed");
-    setCollapsed(sb.classList.contains("collapsed"));
+    const nextCollapsed = !collapsed;
+    sb.classList.toggle("collapsed", nextCollapsed);
+    setCollapsed(nextCollapsed);
   }
 
   return (

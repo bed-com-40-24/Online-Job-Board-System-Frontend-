@@ -1,9 +1,12 @@
 import { getAdminSession } from "@/lib/admin-session";
+import { redirect } from "next/navigation";
+import { StoreProvider } from "@/lib/store";
 
 export default async function ProtectedAdminLayout({
   children,
 }: LayoutProps<"/admin">) {
-  await getAdminSession();
+  const admin = await getAdminSession();
+  if (!admin) redirect("/admin/login");
 
-  return children;
+  return <StoreProvider initialRole="admin">{children}</StoreProvider>;
 }

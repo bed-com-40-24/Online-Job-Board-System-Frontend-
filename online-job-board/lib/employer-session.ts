@@ -15,65 +15,23 @@ function sessionKey() {
   const secret = process.env.SESSION_SECRET;
 
   if (!secret || secret.length < 32) {
-    return null;
+    throw new Error("SESSION_SECRET must contain at least 32 characters.");
   }
 
   return new TextEncoder().encode(secret);
-}
-
-function encodeSessionValue(session: EmployerSession) {
-  return encodeURIComponent(
-    JSON.stringify({
-      id: session.id,
-      email: session.email,
-      companyName: session.companyName,
-      createdAt: Date.now(),
-    }),
-  );
-}
-
-function parseSessionValue(value: string): EmployerSession | null {
-  try {
-    const decoded = JSON.parse(decodeURIComponent(value)) as Partial<EmployerSession> & { createdAt?: number };
-
-    if (
-      typeof decoded.id !== "string" ||
-      typeof decoded.email !== "string" ||
-      typeof decoded.companyName !== "string"
-    ) {
-      return null;
-    }
-
-    return {
-      id: decoded.id,
-      email: decoded.email,
-      companyName: decoded.companyName,
-    };
-  } catch {
-    return null;
-  }
 }
 
 export async function createEmployerSession(employer: EmployerSession) {
   const secret = sessionKey();
   const cookieStore = await cookies();
 
-  if (!secret) {
-    cookieStore.set(cookieName, encodeSessionValue(employer), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: sessionDurationSeconds,
-    });
-    return;
-  }
-
   const token = await new SignJWT({
     email: employer.email,
     companyName: employer.companyName,
   })
     .setProtectedHeader({ alg: "HS256" })
+    .setIssuer("online-job-board-employer")
+    .setAudience("online-job-board-employer")
     .setSubject(employer.id)
     .setIssuedAt()
     .setExpirationTime("8h")
@@ -94,12 +52,13 @@ export async function getEmployerSession(): Promise<EmployerSession | null> {
   if (!token) return null;
 
   const secret = sessionKey();
-  if (!secret) {
-    return parseSessionValue(token);
-  }
 
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ["HS256"],
+      issuer: "online-job-board-employer",
+      audience: "online-job-board-employer",
+    });
     if (
       typeof payload.sub !== "string" ||
       typeof payload.email !== "string" ||

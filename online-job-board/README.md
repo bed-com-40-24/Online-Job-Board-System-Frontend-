@@ -8,7 +8,7 @@ Employer and administrator accounts use the local Oracle XE database. Administra
 - Oracle Database XE running locally with the `XEPDB1` service open
 - The `employer_app` database user and `employers` table
 
-The `employers` table is owned by `EMPLOYER_APP` and contains `employer_id`, `email`, `password_hash`, `company_name`, and `created_at`. The administrator tables are defined in [`database/administrator-auth.sql`](./database/administrator-auth.sql); run that script as the Oracle schema owner before using administrator registration or password recovery.
+The `employers` table is owned by `EMPLOYER_APP` and contains `employer_id`, `email`, `password_hash`, `company_name`, and `created_at`. The administrator tables are defined in [`database/administrator-auth.sql`](./database/administrator-auth.sql); run that script as the Oracle schema owner before using administrator registration or password recovery. Run [`database/employer-password-resets.sql`](./database/employer-password-resets.sql) and the password-reset table definitions in `database/administrator-auth.sql` before using password recovery.
 
 ## Configure the app
 
@@ -31,6 +31,19 @@ npm install
 npm run dev
 ```
 
-Opening `/admin` takes users to `/admin/login`. Registered administrators can sign in there, and authorized administrators can follow the signup link and register at `/admin/register` using the private setup key. Users without the key cannot create administrator accounts. Administrator login is at `/admin/login`, and the protected workspace is at `/admin/dashboard`. Administrator sessions use a separate, HTTP-only cookie and are verified by the protected admin route-group layout.
+Next.js compiles pages on first visit in development, so use a production build when measuring page response times:
 
-Oracle credentials are read only by server-side code in `lib/oracle.ts`. Password reset requests display a clear error when the mail server cannot send the link.
+```bash
+npm run build
+npm run start
+```
+
+If development compilation is still slow on Windows, keep the project and `.next` cache on a local SSD or Windows Dev Drive rather than a network or synced folder. The Next.js development log can report slow filesystem access.
+
+Opening `/admin` takes users to `/admin/login`. Registered administrators can sign in there, and authorized administrators can follow the signup link and register at `/admin/register` using the private setup key. Users without the key cannot create administrator accounts. Employer and administrator credentials are checked on the server against Oracle; passwords are stored as bcrypt hashes. Administrator login is at `/admin/login`, and the protected workspace is at `/admin/dashboard`. Both workspaces require signed, HTTP-only session cookies; `SESSION_SECRET` is mandatory and there is no unsigned-session fallback.
+
+The employer and administrator workspace headers include back and forward buttons for browser navigation. Back returns to the appropriate workspace dashboard when there is no earlier page in the browser history.
+
+Password reset tokens are random, stored only as SHA-256 hashes, expire after one hour, and can be used once. Configure SMTP before requesting a reset; delivery errors are surfaced in the form. Oracle credentials and the administrator setup key are read only by server-side code.
+
+The current Oracle schema stores employer and administrator accounts. Vacancy management, employer verification status, applications, and platform activity still use separate frontend demo state and are not persisted to Oracle.

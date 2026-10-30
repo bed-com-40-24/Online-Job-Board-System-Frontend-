@@ -1,3 +1,5 @@
+'use client';
+
 import type { FormEvent } from 'react';
 import type { Job, Page } from '@/lib/types';
 import { ScreenHeading } from './employerHelpers';

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import BrandMark from "@/app/components/brand-mark";
+import HistoryNavigation from "@/app/components/HistoryNavigation";
 import AdminLogoutButton from "@/app/components/admin-logout-button";
 import AdminSidebar from "@/app/components/admin-sidebar";
 import { getAdminEmployerCount } from "@/lib/admin-data";
@@ -16,13 +18,13 @@ const overview = [
   {
     label: "Jobs awaiting review",
     description: "Moderation queue is not connected",
-    href: "/admin/moderation",
+    href: "/admin/jobs",
     icon: "▤",
   },
   {
     label: "Published postings",
     description: "Publishing data is not connected",
-    href: "/admin/moderation",
+    href: "/admin/jobs",
     icon: "◷",
   },
 ] as const;
@@ -46,12 +48,8 @@ async function RegisteredEmployersCard() {
 }
 
 export default async function AdminDashboardPage() {
-  const admin =
-    (await getAdminSession()) ?? {
-      id: "demo-admin",
-      email: "admin@demo.local",
-      fullName: "Demo Administrator",
-    };
+  const admin = await getAdminSession();
+  if (!admin) redirect("/admin/login");
 
   return (
     <main className="admin-workspace">
@@ -62,6 +60,7 @@ export default async function AdminDashboardPage() {
           <BrandMark />
           <span>OnlineJobBoard</span>
         </Link>
+        <HistoryNavigation fallbackHref="/admin/dashboard" />
         <div className="admin-topbar-user">
           <span>{admin.email}</span>
           <AdminLogoutButton />
@@ -98,7 +97,7 @@ export default async function AdminDashboardPage() {
                 <h2 id="moderation-queue-title">Jobs awaiting moderation</h2>
                 <p>Review submitted job postings.</p>
               </div>
-              <Link className="admin-panel-button" href="/admin/moderation">Open queue</Link>
+              <Link className="admin-panel-button" href="/admin/jobs">Open queue</Link>
             </div>
             <p className="admin-empty-state" role="status">
               Job moderation is not connected yet. Job posting data is not currently available to

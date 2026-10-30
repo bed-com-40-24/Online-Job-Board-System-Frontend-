@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import BrandMark from "@/app/components/brand-mark";
+import HistoryNavigation from "@/app/components/HistoryNavigation";
 import AdminLogoutButton from "@/app/components/admin-logout-button";
 import AdminSidebar from "@/app/components/admin-sidebar";
 import { getRecentAdminEmployers } from "@/lib/admin-data";
@@ -50,12 +51,8 @@ export default async function AdminSectionPage({
   const { section } = await params;
   if (!isAdminSection(section)) notFound();
 
-  const admin =
-    (await getAdminSession()) ?? {
-      id: "demo-admin",
-      email: "admin@demo.local",
-      fullName: "Demo Administrator",
-    };
+  const admin = await getAdminSession();
+  if (!admin) redirect("/admin/login");
 
   const sectionInfo = sections[section];
   const employers = section === "employers" ? await getRecentAdminEmployers(50) : [];
@@ -69,6 +66,7 @@ export default async function AdminSectionPage({
           <BrandMark />
           <span>OnlineJobBoard</span>
         </Link>
+        <HistoryNavigation fallbackHref="/admin/dashboard" />
         <div className="admin-topbar-user">
           <span>{admin.email}</span>
           <AdminLogoutButton />

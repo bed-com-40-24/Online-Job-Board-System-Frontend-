@@ -97,7 +97,7 @@ img {
 }
 
 /* =========================================
-   2. MAIN APPLICATION LAYOUT
+   2. MAIN APPLICATION LAYOUT */
 
 .app-shell {
   display: flex;
@@ -251,7 +251,7 @@ img {
 }
 
 /* =========================================
-   3. TOP BAR
+   3. TOP BAR */
 
 .topbar {
   position: sticky;
@@ -429,7 +429,7 @@ img {
 }
 
 /* =========================================
-   4. APPLICATIONS PAGE
+   4. APPLICATIONS PAGE */
 
 .page-content {
   width: 100%;
@@ -543,30 +543,33 @@ img {
 }
 
 
-.back-button {
-  background: #ffffff; /* white circular background like screenshot */
-  border: 0;
-  color: var(--navy); /* navy arrow */
+.workspace-history-controls {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
+}
+
+.workspace-history-button {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 8%);
+  color: inherit;
   cursor: pointer;
-  margin-right: 10px;
-  border-radius: 9999px;
-  box-shadow: 0 6px 18px rgba(6,18,30,0.25);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition: background-color 120ms ease;
 }
 
-.back-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(6,18,30,0.28);
+.workspace-history-button:hover {
+  background: rgb(255 255 255 / 18%);
 }
 
-.back-button:focus {
-  outline: 2px solid rgba(255,255,255,0.15);
+.workspace-history-button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .site-title {
@@ -992,7 +995,7 @@ img {
 }
 
 /* =========================================
-   5. APPLICANT DETAILS MODAL
+   5. APPLICANT DETAILS MODAL */
 
 .modal-backdrop {
   position: fixed;
@@ -1149,7 +1152,7 @@ img {
 
 /* =========================================
    6. ORGANISATION PROFILE PAGE
-   Styled to match the supplied prototype
+   Styled to match the supplied prototype */
 
 .profile-page-backdrop {
   z-index: 1000;
@@ -1395,7 +1398,7 @@ img {
 }
 
 /* =========================================
-   7. RESPONSIVE LAYOUT
+   7. RESPONSIVE LAYOUT */
 
 @media (max-width: 1200px) {
   .sidebar {
@@ -1711,7 +1714,7 @@ img {
 }
 
 /* =========================================
-   8. ACCESSIBILITY
+   8. ACCESSIBILITY */
 
 button:focus-visible,
 a:focus-visible,
@@ -4176,3 +4179,512 @@ body {
 
 @media(max-width:950px){.app{grid-template-columns:190px minmax(0,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.split{grid-template-columns:1fr}}
 @media(max-width:650px){.app{grid-template-columns:1fr}.side{padding:12px}.nav{grid-template-columns:repeat(2,1fr)}.content{padding:14px}}
+
+/* Shared layout for the employer applications and administrator review screens. */
+.app {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 235px minmax(0, 1fr);
+  grid-template-rows: 68px minmax(0, 1fr);
+  background: #f4f7fc;
+  color: #17253b;
+}
+
+.app > .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 68px;
+  padding: 0 24px;
+  border-bottom: 1px solid #dfe6f0;
+  background: #14243a;
+  color: #edf4ff;
+}
+
+.app > .topbar .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.app > .topbar .logo {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 8px;
+  background: #315be8;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.app > .topbar .user-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #d6e0ef;
+  font-size: 12px;
+}
+
+.app > .topbar .secondary {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+}
+
+.app > .topbar .secondary:hover {
+  background: rgb(255 255 255 / 10%);
+}
+
+.app > .side {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  padding: 22px 14px;
+  background: #14243a;
+  color: #edf4ff;
+}
+
+.app > .side .nav {
+  display: grid;
+  gap: 6px;
+}
+
+.app > .side .nav a {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #d6e0ef;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app > .side .nav a:hover,
+.app > .side .nav a.active {
+  background: rgb(255 255 255 / 12%);
+  color: #ffffff;
+}
+
+.app > .side .nav a:focus-visible,
+.app > .topbar a:focus-visible,
+.app > .topbar button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.app > .main {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  padding: 30px clamp(18px, 3.2vw, 42px);
+}
+
+.applications-page {
+  width: min(100%, 1240px);
+  margin: 0 auto;
+}
+
+.applications-page-heading {
+  margin-bottom: 22px;
+}
+
+.applications-page-heading .eyebrow {
+  margin: 0 0 5px;
+  color: #315be8;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.applications-page-heading h1 {
+  margin: 0;
+  color: #17253b;
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.applications-page-heading > .muted {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.applications-page-heading .notice {
+  justify-content: flex-start;
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-color: #d9e5f7;
+  border-radius: 8px;
+  background: #edf4ff;
+  color: #425875;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.applications-page > .notice.success,
+.applications-page > .notice.error {
+  margin: 0 0 16px;
+  border-radius: 8px;
+}
+
+.applications-page > .notice.success {
+  border-color: #b7e3ce;
+  background: #eef9f3;
+  color: #176444;
+}
+
+.applications-page > .notice.error {
+  border-color: #f1c5c5;
+  background: #fff3f3;
+  color: #a52e2e;
+}
+
+.applications-status-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 22px;
+}
+
+.applications-page .stat-card {
+  display: grid;
+  min-width: 0;
+  min-height: 118px;
+  align-content: start;
+  justify-items: start;
+  gap: 5px;
+  padding: 17px 18px;
+  border: 1px solid #dfe6f0;
+  border-top: 3px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #17253b;
+  text-align: left;
+  box-shadow: 0 2px 6px rgb(23 37 59 / 4%);
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.applications-status-filters .stat-card:nth-child(1) {
+  border-top-color: #d9a441;
+}
+
+.applications-status-filters .stat-card:nth-child(2) {
+  border-top-color: #5279cf;
+}
+
+.applications-status-filters .stat-card:nth-child(3) {
+  border-top-color: #3a9a70;
+}
+
+.applications-status-filters .stat-card:nth-child(4) {
+  border-top-color: #cf6262;
+}
+
+.applications-page .stat-card:hover {
+  border-color: #b8c8e3;
+  background: #fafdff;
+  box-shadow: 0 4px 12px rgb(23 37 59 / 8%);
+}
+
+.applications-page .stat-card.selected {
+  border-color: #315be8;
+  background: #f1f5ff;
+  box-shadow: 0 0 0 2px rgb(49 91 232 / 12%);
+}
+
+.applications-page .stat-card:focus-visible {
+  outline: 3px solid rgb(49 91 232 / 35%);
+  outline-offset: 2px;
+}
+
+.applications-page .stat-label {
+  color: #526178;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.applications-page .number {
+  color: #17253b;
+  font-size: 27px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.applications-page .stat-card .small {
+  color: #718096;
+  font-size: 11px;
+}
+
+.applications-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dfe6f0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgb(23 37 59 / 4%);
+}
+
+.applications-panel-heading {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+.applications-panel-heading h2 {
+  margin: 0;
+  color: #1d2b42;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.applications-panel-heading p {
+  margin: 4px 0 0;
+  color: #718096;
+  font-size: 12px;
+}
+
+.applications-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.applications-table-wrap:focus-visible {
+  outline: 2px solid #315be8;
+  outline-offset: -2px;
+}
+
+.applications-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.applications-table thead {
+  background: #f6f8fc;
+}
+
+.applications-table th {
+  padding: 12px 18px;
+  border-top: 1px solid #e7ecf3;
+  border-bottom: 1px solid #e7ecf3;
+  color: #5b6b82;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.applications-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #edf0f5;
+  color: #34445b;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.applications-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.applications-table tbody tr:hover {
+  background: #fafdff;
+}
+
+.applications-table td strong {
+  color: #1d2b42;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.applications-table td .muted {
+  margin-top: 3px;
+  color: #718096;
+  font-size: 12px;
+}
+
+.applications-table td .badge {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  padding: 4px 9px;
+  border: 1px solid #dfe6f0;
+  border-radius: 999px;
+  background: #f5f7fa;
+  color: #526178;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.applications-table td .badge.warn {
+  border-color: #f2dfb6;
+  background: #fff8e9;
+  color: #94620d;
+}
+
+.applications-table td .badge.good {
+  border-color: #c4e7d4;
+  background: #eff9f3;
+  color: #176444;
+}
+
+.applications-table td .badge.bad {
+  border-color: #f0caca;
+  background: #fff3f3;
+  color: #a52e2e;
+}
+
+.applications-table td select {
+  width: 100%;
+  min-width: 145px;
+  min-height: 40px;
+  padding: 7px 32px 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #26364d;
+  font-size: 12px;
+}
+
+.applications-table td select:focus-visible {
+  outline: 3px solid rgb(49 91 232 / 22%);
+  border-color: #315be8;
+}
+
+.applications-table .reason-text {
+  max-width: 260px;
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.applications-table .applications-empty-row {
+  height: 88px;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 950px) {
+  .applications-status-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+
+  .app > .topbar {
+    grid-row: 1;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+  }
+
+  .app > .topbar .brand {
+    flex: 1 1 140px;
+    font-size: 13px;
+  }
+
+  .app > .topbar .user-chip {
+    margin-left: auto;
+  }
+
+  .app > .topbar .user-chip > span {
+    display: none;
+  }
+
+  .app > .side {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 10px 12px;
+  }
+
+  .app > .side .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app > .side .nav a {
+    min-height: 42px;
+    padding: 8px 9px;
+    font-size: 12px;
+  }
+
+  .app > .main {
+    grid-column: 1;
+    grid-row: 3;
+    padding: 22px 14px 30px;
+  }
+
+  .applications-page-heading {
+    margin-bottom: 18px;
+  }
+
+  .applications-page-heading > .muted {
+    font-size: 13px;
+  }
+
+  .applications-page-heading .notice {
+    margin-top: 14px;
+  }
+
+  .applications-status-filters {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .applications-page .stat-card {
+    min-height: 104px;
+    padding: 13px;
+  }
+
+  .applications-page .number {
+    font-size: 24px;
+  }
+
+  .applications-panel-heading {
+    min-height: 68px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app > .topbar .brand {
+    flex-basis: 120px;
+  }
+
+  .workspace-history-controls {
+    gap: 3px;
+  }
+
+  .workspace-history-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app > .topbar .secondary {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+}

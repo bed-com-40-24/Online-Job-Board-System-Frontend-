@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import BrandMark from "@/app/components/brand-mark";
+import HistoryNavigation from "@/app/components/HistoryNavigation";
 import EmployerLogoutButton from "@/app/components/employer-logout-button";
 import EmployerSidebar from "@/app/components/employer-sidebar";
 import { getEmployerSession } from "@/lib/employer-session";
@@ -10,7 +11,7 @@ const quickActions = [
     icon: "＋",
     title: "Create vacancy",
     description: "Start a job posting",
-    href: "/employer/vacancies",
+    href: "/employer/vacancies/new",
   },
   {
     icon: "♟",
@@ -40,12 +41,8 @@ const metrics = [
 ];
 
 export default async function EmployerDashboardPage() {
-  const employer =
-    (await getEmployerSession()) ?? {
-      id: "demo-employer",
-      email: "demo@company.com",
-      companyName: "Demo Employer",
-    };
+  const employer = await getEmployerSession();
+  if (!employer) redirect("/employer/login");
 
   return (
     <main className="employer-dashboard employer-dashboard-home">
@@ -56,6 +53,7 @@ export default async function EmployerDashboardPage() {
           <BrandMark />
           <span>OnlineJobBoard</span>
         </Link>
+        <HistoryNavigation fallbackHref="/employer/dashboard" />
         <div className="employer-dashboard-user">
           <span className="employer-dashboard-email">{employer.email}</span>
           <EmployerLogoutButton />

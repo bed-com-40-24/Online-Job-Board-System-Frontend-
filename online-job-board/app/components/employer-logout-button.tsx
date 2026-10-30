@@ -1,13 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { logoutEmployer } from "@/app/actions/auth";
+import { useStore } from "@/lib/store";
 
 export default function EmployerLogoutButton() {
   const router = useRouter();
+  const { logout } = useStore();
 
-  function signOut() {
-    document.cookie = "employer_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax";
-    router.push("/employer/login");
+  async function signOut() {
+    await logoutEmployer();
+    logout();
+    router.replace("/employer/login");
     router.refresh();
   }
 

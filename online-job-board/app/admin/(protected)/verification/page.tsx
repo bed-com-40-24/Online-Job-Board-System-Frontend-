@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Badge from '@/components/Badge';
 import ReasonDialog from '@/components/ReasonDialog';
+import Shell from '@/components/Shell';
 import { useStore } from '@/lib/store';
 
 // All of these checks must be complete before an employer can be verified.
@@ -59,11 +60,15 @@ export default function VerificationPage() {
   };
 
   return (
+    <Shell>
     <div className="content">
       <header className="page-head">
         <p className="eyebrow">Admin workspace</p>
         <h1>Employer verification</h1>
         <p className="muted">Review business details before allowing an employer to post jobs.</p>
+        <p className="notice" role="note">
+          This workflow uses sample records. Verification decisions are not saved to Oracle.
+        </p>
       </header>
 
       {/* Screen readers announce this message after an action. */}
@@ -182,5 +187,6 @@ export default function VerificationPage() {
         />
       )}
     </div>
+    </Shell>
   );
 }
