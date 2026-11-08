@@ -1,4 +1,4 @@
-import type { Applicant, ApplicationStatus } from "../../data/applicants";
+import type { Applicant, ApplicationStatus } from "../../../data/applicants";
 
 type ApplicationsTableProps = {
   applicants: Applicant[];

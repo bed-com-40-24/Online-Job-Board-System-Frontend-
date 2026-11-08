@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type HistoryNavigationProps = {
@@ -19,7 +19,7 @@ export default function HistoryNavigation({ fallbackHref }: HistoryNavigationPro
   }
 
   return (
-    <nav className="workspace-history-controls" aria-label="Page history">
+    <nav className="workspace-history-controls" aria-label="Page navigation">
       <button
         className="workspace-history-button"
         onClick={goBack}
@@ -28,15 +28,6 @@ export default function HistoryNavigation({ fallbackHref }: HistoryNavigationPro
         title="Go back"
       >
         <ArrowLeft aria-hidden="true" size={18} />
-      </button>
-      <button
-        className="workspace-history-button"
-        onClick={() => router.forward()}
-        type="button"
-        aria-label="Go forward"
-        title="Go forward"
-      >
-        <ArrowRight aria-hidden="true" size={18} />
       </button>
     </nav>
   );

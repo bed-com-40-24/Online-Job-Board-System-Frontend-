@@ -19,7 +19,15 @@ export function CloseExpireJobVacancy({ job, onAskConfirm, onUpdateJobStatus, on
       >
         {job.status === 'Closed' ? 'Vacancy closed' : 'Close vacancy'}
       </button>
-      <p><button className="danger" onClick={() => onAskConfirm('Permanently delete this vacancy? This cannot be undone.', () => onDeleteJob(job.id))}>Delete vacancy</button></p>
+      <p>
+        <button
+          className="danger"
+          type="button"
+          onClick={() => onAskConfirm('Permanently delete this vacancy? This cannot be undone.', () => onDeleteJob(job.id))}
+        >
+          Delete vacancy
+        </button>
+      </p>
     </>
   );
 }

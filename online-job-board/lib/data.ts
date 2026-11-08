@@ -1,5 +1,5 @@
 export type Role = 'employer' | 'admin';
-export type AppStatus = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
+export type AppStatus = 'New' | 'In review' | 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
 export type OrgStatus = 'Pending verification' | 'Verified' | 'Rejected';
 export type JobStatus = 'Draft' | 'In review' | 'Published' | 'Rejected' | 'Closed';
 export type ReasonCategory = 'applicant' | 'employer' | 'job';
@@ -30,12 +30,28 @@ export type Employer = {
   note?: string;
 };
 
+/** Automatic screening for the employer records used by the admin workspace. */
+export function getEmployerVerificationStatus(employer: Employer): OrgStatus {
+  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employer.email);
+  const phoneIsPlausible = /^[+\d][\d\s()-]{6,}$/.test(employer.phone);
+  const registrationNumberIsPresent = /^[A-Z0-9-]{6,30}$/i.test(employer.regNo.trim());
+  const requiredDetails = [employer.name, employer.contact, employer.industry, employer.address]
+    .every((value) => value.trim().length >= 2);
+
+  return emailIsValid && phoneIsPlausible && registrationNumberIsPresent && requiredDetails
+    ? 'Verified'
+    : 'Pending verification';
+}
+
 export type Job = {
   id: string;
   owner: string;
   title: string;
+  dept?: string;
+  type?: string;
   loc: string;
   deadline: string;
+  openings?: number;
   description: string;
   requirements: string;
   status: JobStatus;
@@ -43,7 +59,7 @@ export type Job = {
   note?: string;
 };
 
-export const APP_STATUSES: AppStatus[] = ['Pending', 'Shortlisted', 'Accepted', 'Rejected'];
+export const APP_STATUSES: AppStatus[] = ['New', 'In review', 'Shortlisted', 'Rejected'];
 export const REQUIRE_REJECTION_REASON = true;
 export const REASONS: Record<ReasonCategory, string[]> = {
   applicant: [
@@ -158,6 +174,18 @@ export const seedJobs: Job[] = [
     requirements: 'Design portfolio and prototyping experience.',
     status: 'Draft',
   },
+  {
+    id: 'JB-1052',
+    owner: EMP_ID,
+    title: 'IT Support Officer',
+    dept: 'Operations',
+    type: 'Contract',
+    loc: 'Blantyre, Malawi',
+    deadline: '2026-11-25',
+    description: 'Provide dependable IT support and maintain endpoint systems.',
+    requirements: 'Troubleshooting, networking fundamentals and customer care.',
+    status: 'Closed',
+  },
 ];
 
 export const seedApplicants: Applicant[] = [
@@ -167,7 +195,7 @@ export const seedApplicants: Applicant[] = [
     email: 'thoko.banda@example.com',
     job: 'Frontend Developer',
     jobId: 'JB-1048',
-    status: 'Pending',
+    status: 'New',
     applied: '09 Oct 2026',
   },
   {
@@ -177,17 +205,25 @@ export const seedApplicants: Applicant[] = [
     job: 'Frontend Developer',
     jobId: 'JB-1048',
     status: 'Shortlisted',
-    applied: '08 Oct 2026',
+    applied: '09 Oct 2026',
   },
   {
     id: 'a3',
+    name: 'Madalitso Zulu',
+    email: 'madalitso.zulu@example.com',
+    job: 'Product Designer',
+    jobId: 'JB-1051',
+    status: 'In review',
+    applied: '09 Oct 2026',
+  },
+  {
+    id: 'a4',
     name: 'Grace Nkhoma',
     email: 'grace.nkhoma@example.com',
-    job: 'Frontend Developer',
-    jobId: 'JB-1048',
+    job: 'IT Support Officer',
+    jobId: 'JB-1052',
     status: 'Rejected',
-    applied: '05 Oct 2026',
-    reason: 'Skills mismatch',
+    applied: '09 Oct 2026',
   },
 ];
 

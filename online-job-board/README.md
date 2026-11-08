@@ -1,6 +1,6 @@
 # OnlineJobBoard Authentication
 
-Employer and administrator accounts use the local Oracle XE database. Administrator registration requires a private `ADMIN_SIGNUP_KEY`, which is shared only with authorized administrators.
+Employer and administrator accounts use a local demo store by default so the app can be tested before Oracle is ready. Set `AUTH_BACKEND=oracle` to use the Oracle backend. The demo store is for single-machine testing only and is not suitable for production or multiple application instances. Administrator registration requires a private `ADMIN_SIGNUP_KEY`.
 
 ## Requirements
 
@@ -8,11 +8,11 @@ Employer and administrator accounts use the local Oracle XE database. Administra
 - Oracle Database XE running locally with the `XEPDB1` service open
 - The `employer_app` database user and `employers` table
 
-The `employers` table is owned by `EMPLOYER_APP` and contains `employer_id`, `email`, `password_hash`, `company_name`, and `created_at`. The administrator tables are defined in [`database/administrator-auth.sql`](./database/administrator-auth.sql); run that script as the Oracle schema owner before using administrator registration or password recovery. Run [`database/employer-password-resets.sql`](./database/employer-password-resets.sql) and the password-reset table definitions in `database/administrator-auth.sql` before using password recovery.
+When using Oracle, the `employers` table is owned by `EMPLOYER_APP` and contains `employer_id`, `email`, `password_hash`, `company_name`, and `created_at`. Run [`database/employer-security.sql`](./database/employer-security.sql) once as the schema owner to add employer registration details and persistent login lockouts, then run [`database/employer-certificate-upload.sql`](./database/employer-certificate-upload.sql) to add certificate-file storage. Employer registration requires a PDF or JPEG, PNG, or WebP certificate image (up to 5 MB); the file is validated on the server and stored in Oracle. The administrator tables are defined in [`database/administrator-auth.sql`](./database/administrator-auth.sql); run that script before using Oracle administrator registration or password recovery. Run [`database/employer-password-resets.sql`](./database/employer-password-resets.sql) and the password-reset table definitions in `database/administrator-auth.sql` before using Oracle password recovery.
 
 ## Configure the app
 
-Create `.env.local` in the project root and copy the values from `.env.example`. Set `ORACLE_PASSWORD` to the password for the Oracle `employer_app` user. Set `SESSION_SECRET` and `ADMIN_SIGNUP_KEY` to separate random values of at least 32 characters. Generate each with:
+Create `.env.local` in the project root. For local testing, set `AUTH_BACKEND=demo` (or omit it; demo is the default). The demo store is written to `.data/demo-auth.json`, which is ignored by Git. Set `AUTH_BACKEND=oracle` when the Oracle database is ready, and set `ORACLE_PASSWORD` to the password for the Oracle `employer_app` user. Set `SESSION_SECRET` and `ADMIN_SIGNUP_KEY` to separate random values of at least 32 characters. Generate each with:
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
@@ -40,10 +40,10 @@ npm run start
 
 If development compilation is still slow on Windows, keep the project and `.next` cache on a local SSD or Windows Dev Drive rather than a network or synced folder. The Next.js development log can report slow filesystem access.
 
-Opening `/admin` takes users to `/admin/login`. Registered administrators can sign in there, and authorized administrators can follow the signup link and register at `/admin/register` using the private setup key. Users without the key cannot create administrator accounts. Employer and administrator credentials are checked on the server against Oracle; passwords are stored as bcrypt hashes. Administrator login is at `/admin/login`, and the protected workspace is at `/admin/dashboard`. Both workspaces require signed, HTTP-only session cookies; `SESSION_SECRET` is mandatory and there is no unsigned-session fallback.
+Opening `/admin` takes users to `/admin/login`. Administrators can register at `/admin/register` using the private setup key. Employer and administrator passwords are stored as bcrypt hashes in the selected backend. In demo mode, password-reset links are displayed directly in the form instead of being emailed. Administrator login is at `/admin/login`, and the protected workspace is at `/admin/dashboard`. Both workspaces require signed, HTTP-only session cookies; `SESSION_SECRET` is mandatory and there is no unsigned-session fallback.
 
 The employer and administrator workspace headers include back and forward buttons for browser navigation. Back returns to the appropriate workspace dashboard when there is no earlier page in the browser history.
 
-Password reset tokens are random, stored only as SHA-256 hashes, expire after one hour, and can be used once. Configure SMTP before requesting a reset; delivery errors are surfaced in the form. Oracle credentials and the administrator setup key are read only by server-side code.
+Password reset tokens are random, stored only as SHA-256 hashes, expire after one hour, and can be used once. Three consecutive incorrect sign-in attempts lock that account type and email for 60 seconds; the server enforces the lock even if the form is refreshed. Configure SMTP before requesting a reset in Oracle mode; delivery errors are surfaced in the form. Oracle credentials and the administrator setup key are read only by server-side code.
 
 The current Oracle schema stores employer and administrator accounts. Vacancy management, employer verification status, applications, and platform activity still use separate frontend demo state and are not persisted to Oracle.
