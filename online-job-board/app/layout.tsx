@@ -1,16 +1,16 @@
-import './globals.css';
-import { StoreProvider } from '@/lib/store';
+import type { Metadata } from 'next';
+import '../styles/globals.css';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Online Job Board',
   description: 'Manage job applications, employer verification, and job posting reviews.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
-        <StoreProvider>{children}</StoreProvider>
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full flex flex-col">
+        {children}
       </body>
     </html>
   );
