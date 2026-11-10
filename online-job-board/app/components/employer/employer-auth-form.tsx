@@ -130,7 +130,6 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
               <form
                 action={formAction}
                 className={`employer-auth-fields${mode === "register" ? " employer-auth-fields-register" : ""}`}
-                encType={mode === "register" ? "multipart/form-data" : undefined}
               >
                 {mode === "reset" && <input name="token" type="hidden" value={token ?? ""} />}
                 {mode === "register" && (

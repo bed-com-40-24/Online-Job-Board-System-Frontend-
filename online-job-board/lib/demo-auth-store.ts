@@ -33,6 +33,12 @@ type DemoAuthData = {
   resetTokens: DemoResetToken[];
 };
 
+const emptyStore = (): DemoAuthData => ({
+  accounts: [],
+  loginAttempts: {},
+  resetTokens: [],
+});
+
 const storeDirectory = path.join(process.cwd(), ".data");
 const storePath = path.join(storeDirectory, "demo-auth.json");
 
@@ -42,29 +48,47 @@ function isMissingFile(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
+function isValidStore(value: unknown): value is DemoAuthData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "accounts" in value &&
+    Array.isArray(value.accounts) &&
+    "loginAttempts" in value &&
+    typeof value.loginAttempts === "object" &&
+    value.loginAttempts !== null &&
+    "resetTokens" in value &&
+    Array.isArray(value.resetTokens)
+  );
+}
+
 async function readStore(): Promise<DemoAuthData> {
   try {
     const contents = await readFile(storePath, "utf8");
-    const parsed: unknown = JSON.parse(contents);
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !("accounts" in parsed) ||
-      !Array.isArray(parsed.accounts) ||
-      !("loginAttempts" in parsed) ||
-      typeof parsed.loginAttempts !== "object" ||
-      parsed.loginAttempts === null ||
-      !("resetTokens" in parsed) ||
-      !Array.isArray(parsed.resetTokens)
-    ) {
-      throw new Error("The demo authentication store has an invalid shape.");
+    if (!contents.trim()) {
+      const nextStore = emptyStore();
+      await writeStore(nextStore).catch(() => undefined);
+      return nextStore;
     }
-    return parsed as DemoAuthData;
+
+    const parsed: unknown = JSON.parse(contents);
+    if (!isValidStore(parsed)) {
+      const nextStore = emptyStore();
+      await writeStore(nextStore).catch(() => undefined);
+      return nextStore;
+    }
+
+    return parsed;
   } catch (error) {
     if (isMissingFile(error)) {
-      return { accounts: [], loginAttempts: {}, resetTokens: [] };
+      const nextStore = emptyStore();
+      await writeStore(nextStore).catch(() => undefined);
+      return nextStore;
     }
-    throw error;
+
+    const nextStore = emptyStore();
+    await writeStore(nextStore).catch(() => undefined);
+    return nextStore;
   }
 }
 
