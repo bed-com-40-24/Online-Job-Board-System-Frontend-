@@ -8,8 +8,8 @@ export const PERMS: Record<Role, Action[]> = {
 };
 
 export const HOME: Record<Role, string> = {
-  employer: '/employer/applications',
-  admin: '/admin/verification',
+  employer: '/employer/dashboard',
+  admin: '/admin/dashboard',
 };
 
 export function can(role: Role | null, action: Action): boolean {
