@@ -3,7 +3,7 @@ import Link from "next/link";
 const navigation = [
   { href: "/employer/dashboard", icon: "▦", label: "Dashboard", section: "dashboard" },
   { href: "/employer/vacancies", icon: "▤", label: "My vacancies", section: "vacancies" },
-  { href: "/employer/vacancies", icon: "＋", label: "Create vacancy", section: "create" },
+  { href: "/employer/vacancies/new", icon: "＋", label: "Create vacancy", section: "create" },
   { href: "/employer/applications", icon: "☷", label: "Applications", section: "applications" },
   { href: "/employer/applicants", icon: "♙", label: "Applicant management", section: "applicants" },
   { href: "/employer/profile", icon: "◉", label: "My profile", section: "profile" },

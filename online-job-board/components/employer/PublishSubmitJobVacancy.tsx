@@ -1,4 +1,4 @@
-import type { Job } from '@/lib/types';
+import type { Job } from '@/lib/data';
 
 export type PublishSubmitJobVacancyProps = {
   job: Job;
@@ -11,7 +11,7 @@ export function PublishSubmitJobVacancy({ job, onAskConfirm, onUpdateJobStatus }
   const label = job.status === 'In review'
     ? 'Vacancy already submitted'
     : job.status === 'Published' || job.status === 'Rejected'
-      ? 'Edit vacancy to resubmit'
+      ? 'Vacancy already submitted'
       : job.status === 'Closed'
         ? 'Vacancy closed'
         : 'Submit for review';
@@ -22,7 +22,7 @@ export function PublishSubmitJobVacancy({ job, onAskConfirm, onUpdateJobStatus }
         className="secondary"
         type="button"
         disabled={!canSubmit}
-        title={canSubmit ? undefined : 'Edit the vacancy details before submitting it again.'}
+        title={canSubmit ? undefined : 'This vacancy cannot be submitted again.'}
         onClick={() => onAskConfirm('Submit this vacancy for review?', () => onUpdateJobStatus(job.id, 'In review'))}
       >
         {label}

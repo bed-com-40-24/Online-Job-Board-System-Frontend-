@@ -4,7 +4,7 @@ const navigation = [
   { href: "/admin/dashboard", icon: "▦", label: "Dashboard", section: "dashboard" },
   { href: "/admin/employers", icon: "♧", label: "Employer management", section: "employers" },
   { href: "/admin/verification", icon: "✓", label: "Employer verification", section: "verification" },
-  { href: "/admin/moderation", icon: "▤", label: "Job moderation", section: "moderation" },
+  { href: "/admin/jobs", icon: "▤", label: "Job moderation", section: "moderation" },
   { href: "/admin/activity", icon: "◷", label: "Activity monitoring", section: "activity" },
   { href: "/admin/profile", icon: "◉", label: "My profile", section: "profile" },
 ] as const;

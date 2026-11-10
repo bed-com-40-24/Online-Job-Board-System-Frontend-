@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import BrandMark from "@/app/components/brand-mark";
+import {
+  loginEmployer,
+  registerEmployer,
+  requestEmployerPasswordReset,
+  resetEmployerPassword,
+  type AuthFormState,
+} from "@/app/actions/auth";
 
 type AuthMode = "login" | "register" | "forgot" | "reset";
 
@@ -33,51 +40,29 @@ const modeDetails: Record<AuthMode, { title: string; lead: string }> = {
 };
 
 export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps) {
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const authAction = mode === "register"
+    ? registerEmployer
+    : mode === "forgot"
+      ? requestEmployerPasswordReset
+      : mode === "reset"
+        ? resetEmployerPassword
+        : loginEmployer;
+  const [actionState, formAction, pending] = useActionState<AuthFormState, FormData>(
+    authAction,
+    {},
+  );
+  const handledRedirect = useRef(false);
   const details = modeDetails[mode];
   const hasToken = mode !== "reset" || Boolean(token);
 
-  function persistSession(session: { id: string; email: string; companyName: string }) {
-    const sessionValue = encodeURIComponent(JSON.stringify(session));
-    document.cookie = `employer_session=${sessionValue}; path=/; max-age=${60 * 60 * 8}; SameSite=Lax`;
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-    const companyName = String(formData.get("companyName") ?? "Employer").trim() || "Employer";
-
-    if (!email || !password) {
-      setError("Please enter the required information to continue.");
-      return;
-    }
-
-    if (mode === "forgot") {
-      setError("");
-      router.push("/employer/login");
-      return;
-    }
-
-    if (mode === "reset") {
-      setError("");
-      router.push("/employer/login");
-      return;
-    }
-
-    persistSession({
-      id: `employer-demo-${Date.now()}`,
-      email,
-      companyName,
-    });
-
-    router.push("/employer/dashboard");
+  useEffect(() => {
+    if (!actionState.redirectTo || handledRedirect.current) return;
+    handledRedirect.current = true;
+    router.replace(actionState.redirectTo);
     router.refresh();
-  }
+  }, [actionState.redirectTo, router]);
 
   const submitLabel = {
     login: "Log in",
@@ -112,7 +97,8 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                 This reset link is missing or invalid. Request a new one to continue.
               </p>
             ) : (
-              <form className="employer-auth-fields" onSubmit={handleSubmit}>
+              <form action={formAction} className="employer-auth-fields">
+                {mode === "reset" && <input name="token" type="hidden" value={token ?? ""} />}
                 {mode === "register" && (
                   <label className="employer-auth-field">
                     Company name
@@ -186,9 +172,10 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                   </div>
                 )}
 
-                {error && <p className="employer-auth-error" role="alert">{error}</p>}
+                {actionState.error && <p className="employer-auth-error" role="alert">{actionState.error}</p>}
+                {actionState.success && <p className="employer-auth-success" role="status">{actionState.success}</p>}
 
-                <button className="employer-auth-submit" type="submit">
+                <button className="employer-auth-submit" disabled={pending} type="submit">
                   {submitLabel}
                 </button>
               </form>
