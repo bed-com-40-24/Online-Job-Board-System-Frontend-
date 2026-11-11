@@ -80,11 +80,9 @@ export function StoreProvider({
   const [role, setRole] = useState<Role | null>(() => initialRole);
   const [ready, setReady] = useState(() => initialRole !== null);
   const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants);
-  const [employers, setEmployers] = useState<Employer[]>(() => seedEmployers.map((employer) => ({
+  const [employers] = useState<Employer[]>(() => seedEmployers.map((employer) => ({
     ...employer,
-    status: employer.status === 'Rejected'
-      ? 'Rejected'
-      : getEmployerVerificationStatus(employer),
+    status: getEmployerVerificationStatus(employer),
   })));
   const [jobs, setJobs] = useState<Job[]>(seedJobs);
   const [adminActivity, setAdminActivity] = useState<AdminActivity[]>([]);

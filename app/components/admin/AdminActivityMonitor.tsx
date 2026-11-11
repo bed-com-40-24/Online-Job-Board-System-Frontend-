@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore, type AdminActivity } from "@/lib/store";
 
 type ActivityRow = AdminActivity;
@@ -17,13 +17,19 @@ function formatActivityTime(value: string) {
 
 export default function AdminActivityMonitor() {
   const { adminActivity, employers, jobs, myApplicants } = useStore();
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setNow(Date.now()));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const fallbackActivity = useMemo(() => {
-    const now = Date.now();
+    if (now === null) return [];
     const events: ActivityRow[] = [];
     const reviewJobs = jobs.filter((job) => job.status === "In review");
     const recentJob = reviewJobs[0];
-    const pendingEmployer = employers.find((employer) => employer.status === "Pending verification");
+    const pendingEmployer = employers.find((employer) => employer.status === "Pending");
     const publishedJob = jobs.find((job) => job.status === "Published");
     const shortlistedApplicant = myApplicants.find((applicant) => applicant.status === "Shortlisted");
 
@@ -75,7 +81,7 @@ export default function AdminActivityMonitor() {
       });
     }
     return events;
-  }, [employers, jobs, myApplicants]);
+  }, [employers, jobs, myApplicants, now]);
 
   const events = [...adminActivity, ...fallbackActivity].slice(0, 12);
 

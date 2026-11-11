@@ -32,7 +32,7 @@ export default function AdminDashboardHeaderTools({ fullName }: { fullName: stri
       detail: `${job.title} (${job.id}) is in the moderation queue.`,
       href: "/admin/jobs",
     })),
-    ...employers.filter((employer) => employer.status === "Pending verification").map((employer) => ({
+    ...employers.filter((employer) => employer.status === "Pending").map((employer) => ({
       id: `employer:${employer.id}`,
       title: "Employer verification pending",
       detail: `${employer.name} is waiting for verification.`,
@@ -42,12 +42,15 @@ export default function AdminDashboardHeaderTools({ fullName }: { fullName: stri
   const unread = notifications.filter((notification) => !seen.includes(notification.id));
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("ojb-admin-seen-notifications");
-      if (saved) setSeen(JSON.parse(saved) as string[]);
-    } catch {
-      setSeen([]);
-    }
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const saved = window.localStorage.getItem("ojb-admin-seen-notifications");
+        if (saved) setSeen(JSON.parse(saved) as string[]);
+      } catch {
+        setSeen([]);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

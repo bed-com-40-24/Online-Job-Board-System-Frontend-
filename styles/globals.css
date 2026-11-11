@@ -3892,11 +3892,14 @@ body {
 
 .employer-auth-register-frame {
   width: min(100%, 1120px);
-  min-height: 0;
+  min-height: 600px;
+  border-color: #d9e4f2;
+  border-radius: 16px;
 }
 
 .employer-auth-register-frame .employer-auth-content {
   padding: clamp(24px, 4vw, 46px);
+  background: #ffffff;
 }
 
 .employer-auth-register-frame .employer-auth-form-wrap {
@@ -3906,8 +3909,8 @@ body {
 .employer-auth-fields-register {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-  column-gap: 20px;
-  row-gap: 13px;
+  column-gap: 24px;
+  row-gap: 18px;
 }
 
 .employer-auth-fields-register .employer-auth-field-label,
@@ -3926,7 +3929,7 @@ body {
   z-index: 1;
   top: 50%;
   left: 12px;
-  color: #78879b;
+  color: #315be8;
   pointer-events: none;
   transform: translateY(-50%);
 }
@@ -3951,7 +3954,7 @@ body {
 .employer-auth-upload-control {
   position: relative;
   display: flex;
-  min-height: 64px;
+  min-height: 66px;
   align-items: center;
   gap: 12px;
   overflow: hidden;
@@ -3998,6 +4001,18 @@ body {
   font-weight: 700;
 }
 
+.employer-auth-upload-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c8d6ff;
+  border-radius: 7px;
+  padding: 0 12px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
 .employer-auth-upload-copy > span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4013,10 +4028,13 @@ body {
 @media (max-width: 720px) {
   .employer-auth-register-frame {
     width: min(100%, 560px);
+    min-height: 0;
+    border-radius: 14px;
   }
 
   .employer-auth-fields-register {
     grid-template-columns: minmax(0, 1fr);
+    row-gap: 15px;
   }
 }
 

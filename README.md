@@ -1,6 +1,6 @@
-# Online Job Board frontend demo
+# Online Job Board demo
 
-A frontend-only job-board prototype built with Next.js 16 App Router, React, and TypeScript. It uses seeded sample records and browser storage to demonstrate employer and administrator workflows. It does not connect to a backend.
+A local job-board demo built with Next.js 16 App Router, React, and TypeScript. Job-board sample records use browser storage. Demo authentication uses server actions and a local account store; setting `AUTH_BACKEND=oracle` switches authentication to the configured Oracle database.
 
 ## Run locally
 
@@ -25,7 +25,18 @@ npm.cmd run build
 | Employer — Lakeview Technologies | `employer@onlinejobboard.mw` | `Employer123!` |
 | Administrator | `admin@onlinejobboard.mw` | `Admin123!` |
 
-The login is a UI simulation, not authentication. Choose **Reset demo data** in the workspace header to restore the original employers, vacancies, applications, and activity. The records are shared between the demo roles in the current browser.
+In development, these accounts are added to the local demo account store when missing. They are disabled in production and when `AUTH_BACKEND=oracle`. Set `SESSION_SECRET` to a random value of at least 32 characters for signed sessions. Demo account records are stored in the ignored `.data/` directory. Choose **Reset demo data** in the workspace header to restore the sample browser records.
+
+## Employer verification integration
+
+New employer accounts start as `Pending`. Registration sends the submitted company details and certificate to the configured HTTPS verification gateway. Only a provider response with JSON `{ "status": "verified" }` or `{ "status": "rejected" }` changes that status; a missing provider, timeout, HTTP error, or malformed response leaves the employer `Pending`. A `reason` string in the JSON response is optional. The provider must validate against a trusted business registry or verification source; the application does not treat document upload or profile formatting as proof.
+
+Configure these server-only variables to enable automatic provider checks:
+
+- `EMPLOYER_VERIFICATION_API_URL`: HTTPS endpoint accepting a multipart POST with `companyName`, `email`, `physicalBusinessAddress`, `companyPhone`, `representativeName`, `representativePosition`, and `businessRegistrationCertificate`.
+- `EMPLOYER_VERIFICATION_API_KEY`: bearer credential for that provider endpoint.
+
+Run `database/employer-verification.sql` against the Oracle schema before using Oracle-backed registration. The migration adds persisted verification status, reason, and check time; existing employers default to `Pending` and require a real provider result before being eligible.
 
 ## Main workflows
 
@@ -54,8 +65,8 @@ The login is a UI simulation, not authentication. Choose **Reset demo data** in 
 
 ## Limitations
 
-- Credentials and authorization are demo-only client behavior and are not secure authentication or access control.
+- Demo credentials are for local testing only. Use Oracle-backed authentication and production secrets for deployment.
 - Employers, vacancies, applications, decisions, and activity are sample data stored in the browser's `localStorage`; the selected role uses `sessionStorage`. Clearing browser storage resets records. There is no cross-browser or multi-user synchronization.
-- No public job search/apply flow, employer self-registration/profile editing, document uploads, email notifications, real company-registration checks, or server-side audit log is connected.
-- Employer account activation does not constitute real identity/business verification. Review checklists and seeded applicant profiles are illustrative.
+- Employer registration and private certificate storage exist, but real company verification requires the external provider configuration above. Without it, registrations stay `Pending`.
+- Vacancy records and their approval flow are still browser-local demo state; there is no backend vacancy publishing operation or database vacancy schema in this repository. Therefore publication cannot yet be protected by a server-side employer verification check. This requires wiring the vacancy persistence/API used by the backend before production publishing is safe.
 - There are no automated unit, integration, or browser tests configured. `lint` and `build` do not verify interactive behavior.

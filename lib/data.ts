@@ -1,6 +1,6 @@
 export type Role = 'employer' | 'admin';
 export type AppStatus = 'New' | 'In review' | 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
-export type OrgStatus = 'Pending verification' | 'Verified' | 'Rejected';
+export type OrgStatus = 'Pending' | 'Verified' | 'Rejected';
 export type JobStatus = 'Draft' | 'In review' | 'Published' | 'Rejected' | 'Closed';
 export type ReasonCategory = 'applicant' | 'employer' | 'job';
 
@@ -30,17 +30,9 @@ export type Employer = {
   note?: string;
 };
 
-/** Automatic screening for the employer records used by the admin workspace. */
+/** An absent status is always treated as pending; profile fields are not proof of legitimacy. */
 export function getEmployerVerificationStatus(employer: Employer): OrgStatus {
-  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employer.email);
-  const phoneIsPlausible = /^[+\d][\d\s()-]{6,}$/.test(employer.phone);
-  const registrationNumberIsPresent = /^[A-Z0-9-]{6,30}$/i.test(employer.regNo.trim());
-  const requiredDetails = [employer.name, employer.contact, employer.industry, employer.address]
-    .every((value) => value.trim().length >= 2);
-
-  return emailIsValid && phoneIsPlausible && registrationNumberIsPresent && requiredDetails
-    ? 'Verified'
-    : 'Pending verification';
+  return employer.status ?? 'Pending';
 }
 
 export type Job = {
@@ -96,7 +88,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 999 123 456',
     address: 'Lilongwe',
     regNo: 'BRN-2019-0412',
-    status: 'Verified',
+    status: 'Pending',
   },
   {
     id: 'emp-3',
@@ -107,7 +99,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 995 440 120',
     address: 'Area 47, Lilongwe',
     regNo: 'BRN-2026-0931',
-    status: 'Pending verification',
+    status: 'Pending',
   },
   {
     id: 'emp-2',
@@ -118,7 +110,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 888 210 330',
     address: 'Blantyre',
     regNo: 'BRN-2017-0188',
-    status: 'Verified',
+    status: 'Pending',
   },
   {
     id: 'emp-4',
@@ -129,7 +121,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 991 320 640',
     address: 'Mzuzu',
     regNo: 'BRN-2022-0776',
-    status: 'Pending verification',
+    status: 'Pending',
   },
 ];
 

@@ -157,7 +157,7 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                       <label className="employer-auth-upload-control" htmlFor="employer-certificate">
                         <UploadCloud aria-hidden="true" size={22} />
                         <span className="employer-auth-upload-copy">
-                          <strong>Choose a file</strong>
+                          <strong className="employer-auth-upload-button">Choose a file</strong>
                           <span>{certificateName || "PDF or image, up to 5 MB"}</span>
                         </span>
                         <input
@@ -217,7 +217,7 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                       </div>
                     </div>
                     <div className="employer-auth-field">
-                      <label className="employer-auth-field-label" htmlFor="employer-representative-name">Authorized business representative</label>
+                      <label className="employer-auth-field-label" htmlFor="employer-representative-name">Authorised business representative</label>
                       <div className="employer-auth-input-wrap">
                         <UserRound aria-hidden="true" className="employer-auth-input-icon" size={18} />
                         <input

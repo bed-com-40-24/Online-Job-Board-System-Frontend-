@@ -40,12 +40,15 @@ export default function EmployerDashboardHeaderTools({ part }: { part: "sidebar"
   const unread = notifications.filter((notification) => !seen.includes(notification.id));
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("ojb-employer-seen-notifications");
-      if (stored) setSeen(JSON.parse(stored) as string[]);
-    } catch {
-      setSeen([]);
-    }
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const stored = window.localStorage.getItem("ojb-employer-seen-notifications");
+        if (stored) setSeen(JSON.parse(stored) as string[]);
+      } catch {
+        setSeen([]);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

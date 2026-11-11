@@ -81,7 +81,7 @@ export default async function EmployerModulePage({
             industry={employerDetails?.industry ?? ""}
             overview={employer.id === "emp-demo" ? "Building useful digital products and growing Malawi’s technology talent." : ""}
             phone={employerDetails?.phone ?? ""}
-            verification={employerDetails?.status ?? "Pending verification"}
+            verification={employerDetails?.status ?? "Pending"}
           />
         ) : (
           <div className="employer-module-placeholder" role="status">
