@@ -7,6 +7,7 @@ import {
   type Employer,
   type Job,
   type JobStatus,
+  type OrgStatus,
   type Role,
   EMP_ID,
   REASONS,
@@ -29,6 +30,7 @@ type StoreContextValue = {
   adminActivity: AdminActivity[];
   myApplicants: Applicant[];
   setApplicantStatus: (id: string, status: AppStatus, reason?: string, note?: string) => boolean;
+  decideEmployer: (id: string, status: OrgStatus, reason?: string, note?: string) => boolean;
   decideJob: (
     id: string,
     status: JobStatus,
@@ -145,6 +147,33 @@ export function StoreProvider({
     return true;
   };
 
+  const decideEmployer: StoreContextValue['decideEmployer'] = (id, status, reason, note) => {
+    if (!can(role, 'employer.verify')) return false;
+    const employer = employers.find((entry) => entry.id === id);
+    if (!employer || employer.status !== 'Pending verification') return false;
+    if (status === 'Rejected' && !validRejection('employer', reason, note)) return false;
+    if (status !== 'Verified' && status !== 'Rejected') return false;
+
+    setEmployers((current) =>
+      current.map((entry) =>
+        entry.id === id
+          ? {
+              ...entry,
+              status,
+              reason: status === 'Rejected' ? reason : undefined,
+              note: status === 'Rejected' ? note?.trim() || undefined : undefined,
+            }
+          : entry,
+      ),
+    );
+    recordAdminActivity(
+      status === 'Verified' ? 'Employer verified' : 'Employer rejected',
+      `${employer.name} (${employer.id}) was ${status.toLowerCase()}.`,
+      '/admin/verification',
+    );
+    return true;
+  };
+
   const decideJob: StoreContextValue['decideJob'] = (
     id,
     status,
@@ -240,6 +269,7 @@ export function StoreProvider({
         adminActivity,
         myApplicants,
         setApplicantStatus,
+        decideEmployer,
         decideJob,
         createEmployerJob,
         updateEmployerJob,

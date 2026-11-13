@@ -65,12 +65,10 @@ export default async function AdminDashboardPage() {
           <span>{admin.email}</span>
           <AdminLogoutButton />
         </div>
-        <AdminDashboardHeaderTools fullName={admin.fullName} />
       </header>
 
       <section className="admin-workspace-content">
         <div className="admin-page-heading">
-          <HistoryNavigation fallbackHref="/admin/dashboard" />
           <div>
             <p className="admin-eyebrow">ADMINISTRATOR WORKSPACE</p>
             <h1>Platform overview</h1>
