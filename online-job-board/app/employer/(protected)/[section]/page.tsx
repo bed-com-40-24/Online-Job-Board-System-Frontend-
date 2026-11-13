@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import BrandMark from "@/app/components/brand-mark";
+import HistoryNavigation from "@/app/components/HistoryNavigation";
 import EmployerLogoutButton from "@/app/components/employer-logout-button";
 import EmployerSidebar from "@/app/components/employer-sidebar";
+import EmployerProfileForm from "@/components/employer/EmployerProfileForm";
 import { getEmployerSession } from "@/lib/employer-session";
 
 const modules = {
@@ -23,7 +25,7 @@ const modules = {
   },
   profile: {
     title: "Company profile",
-    description: "Review and update your employer account details.",
+    description: "Review the account details currently stored for your company.",
     detail: "Company profile management is not connected yet.",
   },
 } as const;
@@ -37,12 +39,8 @@ function isEmployerModule(section: string): section is EmployerModule {
 export default async function EmployerModulePage({
   params,
 }: PageProps<"/employer/[section]">) {
-  const employer =
-    (await getEmployerSession()) ?? {
-      id: "demo-employer",
-      email: "demo@company.com",
-      companyName: "Demo Employer",
-    };
+  const employer = await getEmployerSession();
+  if (!employer) redirect("/employer/login");
 
   const { section } = await params;
   if (!isEmployerModule(section)) notFound();
@@ -57,6 +55,7 @@ export default async function EmployerModulePage({
           <BrandMark />
           <span>OnlineJobBoard</span>
         </Link>
+        <HistoryNavigation fallbackHref="/employer/dashboard" />
         <div className="employer-dashboard-user">
           <span className="employer-dashboard-email">{employer.email}</span>
           <EmployerLogoutButton />
@@ -70,13 +69,17 @@ export default async function EmployerModulePage({
         <p className="employer-dashboard-kicker">EMPLOYER WORKSPACE</p>
         <h1>{moduleInfo.title}</h1>
         <p className="employer-module-description">{moduleInfo.description}</p>
-        <div className="employer-module-placeholder" role="status">
-          <span className="employer-module-placeholder-mark" aria-hidden="true">i</span>
-          <div>
-            <h2>Module coming soon</h2>
-            <p>{moduleInfo.detail} You can return to your dashboard to choose another activity.</p>
+        {section === "profile" ? (
+          <EmployerProfileForm companyName={employer.companyName} email={employer.email} />
+        ) : (
+          <div className="employer-module-placeholder" role="status">
+            <span className="employer-module-placeholder-mark" aria-hidden="true">i</span>
+            <div>
+              <h2>Module coming soon</h2>
+              <p>{moduleInfo.detail} You can return to your dashboard to choose another activity.</p>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </main>
   );

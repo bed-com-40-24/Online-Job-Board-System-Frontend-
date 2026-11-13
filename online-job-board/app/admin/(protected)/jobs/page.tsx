@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Badge from '@/components/Badge';
 import ReasonDialog from '@/components/ReasonDialog';
+import Shell from '@/components/Shell';
 import { isDeadlineOpen } from '@/lib/data';
 import { useStore } from '@/lib/store';
 
@@ -71,11 +72,15 @@ export default function JobReviewPage() {
   };
 
   return (
+    <Shell>
     <div className="content">
       <header className="page-head">
         <p className="eyebrow">Admin workspace</p>
         <h1>Job posting review</h1>
         <p className="muted">Review submitted vacancies before they are published.</p>
+        <p className="notice" role="note">
+          This workflow uses sample records. Review decisions are not saved to Oracle.
+        </p>
       </header>
 
       {/* Screen readers announce this message after an action. */}
@@ -205,5 +210,6 @@ export default function JobReviewPage() {
         />
       )}
     </div>
+    </Shell>
   );
 }

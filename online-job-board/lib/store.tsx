@@ -58,21 +58,29 @@ function validRejection(category: keyof typeof REASONS, reason?: string, note?: 
   return reason !== 'Other' || (note?.trim().length ?? 0) >= 5;
 }
 
-export function StoreProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role | null>(null);
-  const [ready, setReady] = useState(false);
+export function StoreProvider({
+  children,
+  initialRole = null,
+}: {
+  children: ReactNode;
+  initialRole?: Role | null;
+}) {
+  const [role, setRole] = useState<Role | null>(() => initialRole);
+  const [ready, setReady] = useState(() => initialRole !== null);
   const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants);
   const [employers, setEmployers] = useState<Employer[]>(seedEmployers);
   const [jobs, setJobs] = useState<Job[]>(seedJobs);
 
   useEffect(() => {
+    if (initialRole) return;
+
     const timer = window.setTimeout(() => {
       const savedRole = sessionStorage.getItem('ojb_role');
       setRole(isRole(savedRole) ? savedRole : null);
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [initialRole]);
 
   const login = (nextRole: Role) => {
     sessionStorage.setItem('ojb_role', nextRole);
