@@ -1,6 +1,6 @@
 export type Role = 'employer' | 'admin';
-export type AppStatus = 'New' | 'In review' | 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
-export type OrgStatus = 'Pending' | 'Verified' | 'Rejected';
+export type AppStatus = 'Pending' | 'Shortlisted' | 'Accepted' | 'Rejected';
+export type OrgStatus = 'Pending verification' | 'Verified' | 'Rejected';
 export type JobStatus = 'Draft' | 'In review' | 'Published' | 'Rejected' | 'Closed';
 export type ReasonCategory = 'applicant' | 'employer' | 'job';
 
