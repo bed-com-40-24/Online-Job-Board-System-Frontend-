@@ -1,9 +1,8 @@
 import "server-only";
 
 import oracledb from "oracledb";
-import { getDemoEmployerVerificationRecords } from "@/lib/demo-auth-store";
 import { getOracleConnection } from "@/lib/oracle";
-import type { OrgStatus } from "@/lib/data";
+import { seedEmployers, type OrgStatus } from "@/lib/data";
 
 export type EmployerVerificationRecord = {
   id: string;
@@ -18,14 +17,20 @@ type EmployerVerificationRow = {
   EMPLOYER_ID: number;
   COMPANY_NAME: string;
   EMAIL: string;
-  VERIFICATION_STATUS: OrgStatus | null;
+  VERIFICATION_STATUS: string | null;
   VERIFICATION_REASON: string | null;
   VERIFICATION_CHECKED_AT: Date | null;
 };
 
 export async function getEmployerVerificationRecords(): Promise<EmployerVerificationRecord[]> {
   if ((process.env.AUTH_BACKEND ?? "demo") === "demo") {
-    return getDemoEmployerVerificationRecords();
+    return seedEmployers.map((employer) => ({
+      id: employer.id,
+      companyName: employer.name,
+      email: employer.email,
+      status: employer.status,
+      reason: employer.reason,
+    }));
   }
 
   let connection: oracledb.Connection | undefined;
@@ -46,7 +51,7 @@ export async function getEmployerVerificationRecords(): Promise<EmployerVerifica
       email: row.EMAIL,
       status: row.VERIFICATION_STATUS === "Verified" || row.VERIFICATION_STATUS === "Rejected"
         ? row.VERIFICATION_STATUS
-        : "Pending",
+        : "Pending verification",
       reason: row.VERIFICATION_REASON ?? undefined,
       checkedAt: row.VERIFICATION_CHECKED_AT?.toISOString(),
     }));

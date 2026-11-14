@@ -1,81 +1,6 @@
-# Online Job Board demo
-
-A local job-board demo built with Next.js 16 App Router, React, and TypeScript. Job-board sample records use browser storage. Demo authentication uses server actions and a local account store; setting `AUTH_BACKEND=oracle` switches authentication to the configured Oracle database.
-
-## Run locally
-
-Requirements: Node.js and npm.
-
-```powershell
-npm.cmd ci
-npm.cmd run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000). Other useful commands:
-
-```powershell
-npm.cmd run lint
-npm.cmd run build
-```
-
-## Demo accounts
-
-| Workspace | Email | Password |
-| --- | --- | --- |
-| Employer — Lakeview Technologies | `employer@onlinejobboard.mw` | `Employer123!` |
-| Administrator | `admin@onlinejobboard.mw` | `Admin123!` |
-
-In development, these accounts are added to the local demo account store when missing. They are disabled in production and when `AUTH_BACKEND=oracle`. Set `SESSION_SECRET` to a random value of at least 32 characters for signed sessions. Demo account records are stored in the ignored `.data/` directory. Choose **Reset demo data** in the workspace header to restore the sample browser records.
-
-## Employer verification integration
-
-New employer accounts start as `Pending`. Registration sends the submitted company details and certificate to the configured HTTPS verification gateway. Only a provider response with JSON `{ "status": "verified" }` or `{ "status": "rejected" }` changes that status; a missing provider, timeout, HTTP error, or malformed response leaves the employer `Pending`. A `reason` string in the JSON response is optional. The provider must validate against a trusted business registry or verification source; the application does not treat document upload or profile formatting as proof.
-
-Configure these server-only variables to enable automatic provider checks:
-
-- `EMPLOYER_VERIFICATION_API_URL`: HTTPS endpoint accepting a multipart POST with `companyName`, `email`, `physicalBusinessAddress`, `companyPhone`, `representativeName`, `representativePosition`, and `businessRegistrationCertificate`.
-- `EMPLOYER_VERIFICATION_API_KEY`: bearer credential for that provider endpoint.
-
-Run `database/employer-verification.sql` against the Oracle schema before using Oracle-backed registration. The migration adds persisted verification status, reason, and check time; existing employers default to `Pending` and require a real provider result before being eligible.
-
-## Main workflows
-
-- **Employer:** overview; search/filter owned vacancies; create or edit drafts; validate and submit or resubmit rejected vacancies; close published vacancies with confirmation; search/filter applications; inspect candidate profiles; update application statuses or reject with a reason.
-- **Administrator:** overview; search employer records; activate or suspend accounts; verify or reject pending business profiles with a checklist and rejection reason; search/filter and inspect vacancy submissions; approve eligible postings or reject with a reason.
-- **Both roles:** role-gated workspace routes, responsive navigation, and role-filtered activity feed. Decisions record the demo actor and timestamp.
-
-## Requirements traceability
-
-“Implemented” describes frontend demo behavior, not a production service. Verification performed: `npm.cmd run lint`, `npm.cmd run build`, and representative manual browser smoke tests covering both demo roles, role-gated navigation, vacancy creation/submission/approval/closure, applicant profile and status updates, employer verification and account activation, activity filtering, browser persistence, and resetting sample data. No automated unit, integration, or browser test suite is configured, so these checks are not exhaustive.
-
-| ID | Requirement | Coverage | Verification |
-| --- | --- | --- | --- |
-| EFR-01 | Employer sign-in, session role, invalid-credential feedback | Demo credential form; session-scoped role | Sign-in and role gating smoke-tested |
-| EFR-02 | Employer overview and owned-vacancy dashboard | Employer overview, counts, links | Dashboard and owned-vacancy navigation smoke-tested |
-| EFR-03 | Create/edit drafts; required vacancy fields; future deadline; submit and resubmit | Vacancy form and lifecycle validation | Creation, required-field validation, and submission smoke-tested |
-| EFR-04 | Close a published vacancy with confirmation | Employer vacancy list and confirmation | Close confirmation and reset smoke-tested |
-| EFR-05 | Search applications, inspect candidate profiles, update status, reject with reason/notes | Application table, profile dialog, reason dialog | Profile inspection, status update, and persistence smoke-tested |
-| AFR-01 | Administrator sign-in and role-gated routes | Demo credential form and role gate | Sign-in and role gating smoke-tested |
-| AFR-02 | Employer search, account status controls, verification decision and reason | Employer directory and verification workspace | Employer filtering, verification, and account activation smoke-tested |
-| AFR-03 | Vacancy search/filter/detail and approval/rejection decisions | Job review workspace and checklist | Vacancy review, approval, and rejection smoke-tested |
-| AFR-04 | Activity feed with role and action filters; actor/time capture | Local activity feed and decision records | Role/action filtering and recorded activity smoke-tested |
-| NFR-01 | Responsive layouts, keyboard access, labels, feedback, and empty states | Shared workspace styles and semantic controls | Navigation controls and representative route rendering smoke-tested |
-| NFR-02 | Persist demo data locally and restore sample records | `localStorage`; reset action in workspace header | Browser persistence and seeded-data reset smoke-tested |
-| NFR-03 | No backend or additional runtime dependencies | Seeded in-browser store; existing dependencies retained | Existing dependency stack retained; no backend connected |
-
-## Limitations
-
-- Demo credentials are for local testing only. Use Oracle-backed authentication and production secrets for deployment.
-- Employers, vacancies, applications, decisions, and activity are sample data stored in the browser's `localStorage`; the selected role uses `sessionStorage`. Clearing browser storage resets records. There is no cross-browser or multi-user synchronization.
-- Employer registration and private certificate storage exist, but real company verification requires the external provider configuration above. Without it, registrations stay `Pending`.
-- Vacancy records and their approval flow are still browser-local demo state; there is no backend vacancy publishing operation or database vacancy schema in this repository. Therefore publication cannot yet be protected by a server-side employer verification check. This requires wiring the vacancy persistence/API used by the backend before production publishing is safe.
-- There are no automated unit, integration, or browser tests configured. `lint` and `build` do not verify interactive behavior.
-
----
-
 # OnlineJobBoard Authentication
 
-Employer and administrator accounts use the local Oracle XE database. Administrator registration requires a private `ADMIN_SIGNUP_KEY`, which is shared only with authorized administrators.
+Employer and administrator accounts use a local demo store by default so the app can be tested before Oracle is ready. Set `AUTH_BACKEND=oracle` to use the Oracle backend. The demo store is for single-machine testing only and is not suitable for production or multiple application instances. Administrator registration requires a private `ADMIN_SIGNUP_KEY`.
 
 ## Requirements
 
@@ -83,11 +8,11 @@ Employer and administrator accounts use the local Oracle XE database. Administra
 - Oracle Database XE running locally with the `XEPDB1` service open
 - The `employer_app` database user and `employers` table
 
-The `employers` table is owned by `EMPLOYER_APP` and contains `employer_id`, `email`, `password_hash`, `company_name`, and `created_at`. The administrator tables are defined in [`database/administrator-auth.sql`](./database/administrator-auth.sql); run that script as the Oracle schema owner before using administrator registration or password recovery. Run [`database/employer-password-resets.sql`](./database/employer-password-resets.sql) and the password-reset table definitions in `database/administrator-auth.sql` before using password recovery.
+When using Oracle, the `employers` table is owned by `EMPLOYER_APP` and contains `employer_id`, `email`, `password_hash`, `company_name`, and `created_at`. Run [`database/employer-security.sql`](./database/employer-security.sql) once as the schema owner to add employer registration details and persistent login lockouts, then run [`database/employer-certificate-upload.sql`](./database/employer-certificate-upload.sql) to add certificate-file storage. Employer registration requires a PDF or JPEG, PNG, or WebP certificate image (up to 5 MB); the file is validated on the server and stored in Oracle. The administrator tables are defined in [`database/administrator-auth.sql`](./database/administrator-auth.sql); run that script before using Oracle administrator registration or password recovery. Run [`database/employer-password-resets.sql`](./database/employer-password-resets.sql) and the password-reset table definitions in `database/administrator-auth.sql` before using Oracle password recovery.
 
 ## Configure the app
 
-Create `.env.local` in the project root and copy the values from `.env.example`. Set `ORACLE_PASSWORD` to the password for the Oracle `employer_app` user. Set `SESSION_SECRET` and `ADMIN_SIGNUP_KEY` to separate random values of at least 32 characters. Generate each with:
+Create `.env.local` in the project root. For local testing, set `AUTH_BACKEND=demo` (or omit it; demo is the default). The demo store is written to `.data/demo-auth.json`, which is ignored by Git. Set `AUTH_BACKEND=oracle` when the Oracle database is ready, and set `ORACLE_PASSWORD` to the password for the Oracle `employer_app` user. Set `SESSION_SECRET` and `ADMIN_SIGNUP_KEY` to separate random values of at least 32 characters. Generate each with:
 
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
@@ -115,10 +40,10 @@ npm run start
 
 If development compilation is still slow on Windows, keep the project and `.next` cache on a local SSD or Windows Dev Drive rather than a network or synced folder. The Next.js development log can report slow filesystem access.
 
-Opening `/admin` takes users to `/admin/login`. Registered administrators can sign in there, and authorized administrators can follow the signup link and register at `/admin/register` using the private setup key. Users without the key cannot create administrator accounts. Employer and administrator credentials are checked on the server against Oracle; passwords are stored as bcrypt hashes. Administrator login is at `/admin/login`, and the protected workspace is at `/admin/dashboard`. Both workspaces require signed, HTTP-only session cookies; `SESSION_SECRET` is mandatory and there is no unsigned-session fallback.
+Opening `/admin` takes users to `/admin/login`. Administrators can register at `/admin/register` using the private setup key. Employer and administrator passwords are stored as bcrypt hashes in the selected backend. In demo mode, password-reset links are displayed directly in the form instead of being emailed. Administrator login is at `/admin/login`, and the protected workspace is at `/admin/dashboard`. Both workspaces require signed, HTTP-only session cookies; `SESSION_SECRET` is mandatory and there is no unsigned-session fallback.
 
 The employer and administrator workspace headers include back and forward buttons for browser navigation. Back returns to the appropriate workspace dashboard when there is no earlier page in the browser history.
 
-Password reset tokens are random, stored only as SHA-256 hashes, expire after one hour, and can be used once. Configure SMTP before requesting a reset; delivery errors are surfaced in the form. Oracle credentials and the administrator setup key are read only by server-side code.
+Password reset tokens are random, stored only as SHA-256 hashes, expire after one hour, and can be used once. Three consecutive incorrect sign-in attempts lock that account type and email for 60 seconds; the server enforces the lock even if the form is refreshed. Configure SMTP before requesting a reset in Oracle mode; delivery errors are surfaced in the form. Oracle credentials and the administrator setup key are read only by server-side code.
 
 The current Oracle schema stores employer and administrator accounts. Vacancy management, employer verification status, applications, and platform activity still use separate frontend demo state and are not persisted to Oracle.

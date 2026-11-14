@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import BrandMark from "@/app/components/brand-mark";
-import HistoryNavigation from "@/app/components/HistoryNavigation";
-import AdminLogoutButton from "@/app/components/admin-logout-button";
-import AdminSidebar from "@/app/components/admin-sidebar";
-import { getRecentAdminEmployers } from "@/lib/admin-data";
+import AdminActivityMonitor from "@/app/components/admin/AdminActivityMonitor";
+import AdminDashboardHeaderTools, { AdminDashboardMenuButton } from "@/app/components/admin/AdminDashboardHeaderTools";
+import AdminProfileForm from "@/app/components/admin/AdminProfileForm";
+import AdminSidebar from "@/app/components/admin/admin-sidebar";
+import BrandMark from "@/app/components/shared/brand-mark";
+import HistoryNavigation from "@/app/components/shared/HistoryNavigation";
 import { getAdminSession } from "@/lib/admin-session";
 
 const sectionDetails = {
@@ -28,22 +29,18 @@ export default async function AdminSectionPage({
 
   const admin = await getAdminSession();
   if (!admin) redirect("/admin/login");
-
-  const sectionInfo = sections[section];
-  const employers = section === "employers" ? await getRecentAdminEmployers(50) : [];
+  const page = sectionDetails[section];
 
   return (
     <main className="admin-workspace">
       <AdminSidebar currentSection={section} fullName={admin.fullName} />
       <header className="admin-topbar">
-        <Link className="admin-topbar-brand" href="/admin/dashboard">
-          <BrandMark />
-          <span>OnlineJobBoard</span>
-        </Link>
-        <HistoryNavigation fallbackHref="/admin/dashboard" />
-        <div className="admin-topbar-user">
-          <span>{admin.email}</span>
-          <AdminLogoutButton />
+        <div className="admin-topbar-brand-tools">
+          <Link className="admin-topbar-brand" href="/admin/dashboard">
+            <BrandMark />
+            <span>OnlineJobBoard</span>
+          </Link>
+          <AdminDashboardMenuButton />
         </div>
         <AdminDashboardHeaderTools fullName={admin.fullName} />
       </header>

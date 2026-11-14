@@ -96,7 +96,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 999 123 456',
     address: 'Lilongwe',
     regNo: 'BRN-2019-0412',
-    status: 'Pending',
+    status: 'Verified',
   },
   {
     id: 'emp-3',
@@ -107,7 +107,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 995 440 120',
     address: 'Area 47, Lilongwe',
     regNo: 'BRN-2026-0931',
-    status: 'Pending',
+    status: 'Pending verification',
   },
   {
     id: 'emp-2',
@@ -118,7 +118,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 888 210 330',
     address: 'Blantyre',
     regNo: 'BRN-2017-0188',
-    status: 'Pending',
+    status: 'Verified',
   },
   {
     id: 'emp-4',
@@ -129,7 +129,7 @@ export const seedEmployers: Employer[] = [
     phone: '+265 991 320 640',
     address: 'Mzuzu',
     regNo: 'BRN-2022-0776',
-    status: 'Pending',
+    status: 'Pending verification',
   },
 ];
 

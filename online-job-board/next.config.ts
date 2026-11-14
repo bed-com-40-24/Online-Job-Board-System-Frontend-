@@ -10,6 +10,11 @@ if (appUrl) {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: [...new Set(allowedDevOrigins)],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "6mb",
+    },
+  },
   turbopack: {
     root: process.cwd(),
   },

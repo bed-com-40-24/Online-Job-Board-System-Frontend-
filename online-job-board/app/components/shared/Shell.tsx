@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { HOME, can } from '@/lib/permissions';
 import { useStore } from '@/lib/store';
 import { logoutAdmin, logoutEmployer } from '@/app/actions/auth';
-import HistoryNavigation from '@/app/components/HistoryNavigation';
+import HistoryNavigation from '@/app/components/shared/HistoryNavigation';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

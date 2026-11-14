@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Badge from '@/components/Badge';
-import ReasonDialog from '@/components/ReasonDialog';
-import Shell from '@/components/Shell';
+import Badge from '@/app/components/shared/Badge';
+import ReasonDialog from '@/app/components/shared/ReasonDialog';
+import Shell from '@/app/components/shared/Shell';
 import { APP_STATUSES, type AppStatus, type Applicant } from '@/lib/data';
 import { useStore } from '@/lib/store';
 
@@ -20,6 +20,8 @@ export default function ApplicationsPage() {
   const counts = useMemo(
     () => ({
       All: myApplicants.length,
+      New: myApplicants.filter((applicant) => applicant.status === 'New').length,
+      'In review': myApplicants.filter((applicant) => applicant.status === 'In review').length,
       Pending: myApplicants.filter((applicant) => applicant.status === 'Pending').length,
       Shortlisted: myApplicants.filter((applicant) => applicant.status === 'Shortlisted').length,
       Accepted: myApplicants.filter((applicant) => applicant.status === 'Accepted').length,
