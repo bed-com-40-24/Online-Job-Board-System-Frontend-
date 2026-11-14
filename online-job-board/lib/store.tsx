@@ -29,6 +29,7 @@ type StoreContextValue = {
   adminActivity: AdminActivity[];
   myApplicants: Applicant[];
   setApplicantStatus: (id: string, status: AppStatus, reason?: string, note?: string) => boolean;
+  decideEmployer: (id: string, status: 'Verified' | 'Rejected', reason?: string, note?: string) => boolean;
   decideJob: (
     id: string,
     status: JobStatus,
@@ -267,6 +268,7 @@ export function StoreProvider({
         adminActivity,
         myApplicants,
         setApplicantStatus,
+        decideEmployer,
         decideJob,
         createEmployerJob,
         updateEmployerJob,
