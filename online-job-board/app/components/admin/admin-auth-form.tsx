@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import BrandMark from "@/app/components/brand-mark";
+import BrandMark from "@/app/components/shared/brand-mark";
+import {
+  loginAdmin,
+  registerAdmin,
+  requestAdminPasswordReset,
+  resetAdminPassword,
+  type AuthFormState,
+} from "@/app/actions/auth";
 
 type AdminAuthMode = "login" | "register" | "forgot" | "reset";
 
@@ -33,51 +40,42 @@ const modeDetails: Record<AdminAuthMode, { title: string; lead: string }> = {
 };
 
 export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const authAction = mode === "register"
+    ? registerAdmin
+    : mode === "forgot"
+      ? requestAdminPasswordReset
+      : mode === "reset"
+        ? resetAdminPassword
+        : loginAdmin;
+  const [actionState, formAction, pending] = useActionState<AuthFormState, FormData>(
+    authAction,
+    {},
+  );
+  const [remainingLockSeconds, setRemainingLockSeconds] = useState(0);
+  const handledRedirect = useRef(false);
   const details = modeDetails[mode];
   const hasToken = mode !== "reset" || Boolean(token);
+  const loginLocked = mode === "login" && remainingLockSeconds > 0;
 
-  function persistSession(session: { id: string; email: string; fullName: string }) {
-    const sessionValue = encodeURIComponent(JSON.stringify(session));
-    document.cookie = `admin_session=${sessionValue}; path=/; max-age=${60 * 60 * 8}; SameSite=Lax`;
-  }
+  useEffect(() => {
+    if (!actionState.retryAfter) return;
+    const expiresAt = Date.now() + actionState.retryAfter * 1000;
+    const updateRemaining = () => {
+      setRemainingLockSeconds(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
+    };
+    updateRemaining();
+    const interval = window.setInterval(updateRemaining, 1000);
+    return () => window.clearInterval(interval);
+  }, [actionState.retryAfter]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-    const fullName = String(formData.get("fullName") ?? "Administrator").trim() || "Administrator";
-
-    if (!email || !password) {
-      setError("Please enter the required information to continue.");
-      return;
-    }
-
-    if (mode === "forgot") {
-      setError("");
-      router.push("/admin/login");
-      return;
-    }
-
-    if (mode === "reset") {
-      setError("");
-      router.push("/admin/login");
-      return;
-    }
-
-    persistSession({
-      id: `admin-demo-${Date.now()}`,
-      email,
-      fullName,
-    });
-
-    router.push("/admin/dashboard");
+  useEffect(() => {
+    if (!actionState.redirectTo || handledRedirect.current) return;
+    handledRedirect.current = true;
+    router.replace(actionState.redirectTo);
     router.refresh();
-  }
+  }, [actionState.redirectTo, router]);
 
   const submitLabel = {
     login: "Sign in",
@@ -104,7 +102,8 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                 This reset link is missing or invalid. Request a new one to continue.
               </p>
             ) : (
-              <form className="employer-auth-fields" onSubmit={handleSubmit}>
+              <form action={formAction} className="employer-auth-fields">
+                {mode === "reset" && <input name="token" type="hidden" value={token ?? ""} />}
                 {mode === "register" && (
                   <>
                     <label className="employer-auth-field">
@@ -146,6 +145,7 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                       type="email"
                       autoComplete="email"
                       maxLength={320}
+                      disabled={loginLocked}
                       required
                     />
                   </label>
@@ -165,11 +165,13 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                         autoComplete={mode === "login" ? "current-password" : "new-password"}
                         minLength={mode === "login" ? undefined : 12}
                         maxLength={72}
+                        disabled={loginLocked}
                         required
                       />
                       <button
                         className="employer-password-toggle"
                         type="button"
+                        disabled={loginLocked}
                         aria-label={showPassword ? "Hide password" : "Show password"}
                         aria-pressed={showPassword}
                         onClick={() => setShowPassword((visible) => !visible)}
@@ -195,10 +197,21 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                   </div>
                 )}
 
-                {error && <p className="employer-auth-error" role="alert">{error}</p>}
+                {actionState.error && <p className="employer-auth-error" role="alert">{actionState.error}</p>}
+                {loginLocked && (
+                  <p className="employer-auth-error" role="status">
+                    Sign-in is temporarily locked. Try again in {remainingLockSeconds} seconds.
+                  </p>
+                )}
+                {actionState.success && <p className="employer-auth-success" role="status">{actionState.success}</p>}
+                {actionState.resetUrl && (
+                  <p className="employer-auth-switch">
+                    <Link className="employer-auth-link" href={actionState.resetUrl}>Open demo password reset</Link>
+                  </p>
+                )}
 
-                <button className="employer-auth-submit" type="submit">
-                  {submitLabel}
+                <button className="employer-auth-submit" disabled={pending || loginLocked} type="submit">
+                  {loginLocked ? `Try again in ${remainingLockSeconds}s` : submitLabel}
                 </button>
               </form>
             )}

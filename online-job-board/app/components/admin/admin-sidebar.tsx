@@ -4,7 +4,7 @@ const navigation = [
   { href: "/admin/dashboard", icon: "▦", label: "Dashboard", section: "dashboard" },
   { href: "/admin/employers", icon: "♧", label: "Employer management", section: "employers" },
   { href: "/admin/verification", icon: "✓", label: "Employer verification", section: "verification" },
-  { href: "/admin/moderation", icon: "▤", label: "Job moderation", section: "moderation" },
+  { href: "/admin/jobs", icon: "▤", label: "Job moderation", section: "moderation" },
   { href: "/admin/activity", icon: "◷", label: "Activity monitoring", section: "activity" },
   { href: "/admin/profile", icon: "◉", label: "My profile", section: "profile" },
 ] as const;
@@ -24,27 +24,18 @@ function initials(name: string) {
 }
 
 export default function AdminSidebar({ fullName, currentSection }: AdminSidebarProps) {
-  const dashboardOnly = currentSection === "dashboard";
-  const visibleNavigation = navigation.filter(
-    (item) => !dashboardOnly || item.section === "dashboard",
-  );
-
   return (
     <aside className="admin-sidebar">
-      {!dashboardOnly && (
-        <>
-          <Link className="admin-sidebar-account" href="/admin/profile">
-            <span className="admin-sidebar-avatar" aria-hidden="true">{initials(fullName)}</span>
-            <span className="admin-sidebar-account-copy">
-              <strong>{fullName}</strong>
-              <span>Administrator</span>
-            </span>
-          </Link>
-          <p className="admin-sidebar-label">ADMINISTRATOR WORKSPACE</p>
-        </>
-      )}
+      <Link className="admin-sidebar-account" href="/admin/profile">
+        <span className="admin-sidebar-avatar" aria-hidden="true">{initials(fullName)}</span>
+        <span className="admin-sidebar-account-copy">
+          <strong>{fullName}</strong>
+          <span>Administrator</span>
+        </span>
+      </Link>
+      <p className="admin-sidebar-label">ADMINISTRATOR WORKSPACE</p>
       <nav className="admin-sidebar-nav" aria-label="Administrator workspace">
-        {visibleNavigation.map((item) => (
+        {navigation.map((item) => (
           <Link
             aria-current={item.section === currentSection ? "page" : undefined}
             className={`admin-sidebar-link${item.section === currentSection ? " is-current" : ""}`}
@@ -56,9 +47,9 @@ export default function AdminSidebar({ fullName, currentSection }: AdminSidebarP
           </Link>
         ))}
       </nav>
-      {!dashboardOnly && (
-        <p className="admin-sidebar-foot">OnlineJobBoard platform administration</p>
-      )}
+      <div className="admin-sidebar-foot">
+        <span>OnlineJobBoard platform administration</span>
+      </div>
     </aside>
   );
 }
