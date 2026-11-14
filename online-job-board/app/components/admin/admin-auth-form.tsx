@@ -198,20 +198,10 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                 )}
 
                 {actionState.error && <p className="employer-auth-error" role="alert">{actionState.error}</p>}
-                {loginLocked && (
-                  <p className="employer-auth-error" role="status">
-                    Sign-in is temporarily locked. Try again in {remainingLockSeconds} seconds.
-                  </p>
-                )}
                 {actionState.success && <p className="employer-auth-success" role="status">{actionState.success}</p>}
-                {actionState.resetUrl && (
-                  <p className="employer-auth-switch">
-                    <Link className="employer-auth-link" href={actionState.resetUrl}>Open demo password reset</Link>
-                  </p>
-                )}
 
-                <button className="employer-auth-submit" disabled={pending || loginLocked} type="submit">
-                  {loginLocked ? `Try again in ${remainingLockSeconds}s` : submitLabel}
+                <button className="employer-auth-submit" disabled={pending} type="submit">
+                  {submitLabel}
                 </button>
               </form>
             )}

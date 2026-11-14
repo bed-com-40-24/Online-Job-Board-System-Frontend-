@@ -40,13 +40,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="workspace-brand-controls">
-          <Link className="brand" href={HOME[role]}>
-            <span className="logo">OJB</span>
-            Online Job Board
-          </Link>
-          <HistoryNavigation fallbackHref={HOME[role]} />
-        </div>
+        <Link className="brand" href={HOME[role]}>
+          <span className="logo">OJB</span>
+          Online Job Board
+        </Link>
+        <HistoryNavigation fallbackHref={HOME[role]} />
         <div className="user-chip">
           <span>{role === 'employer' ? 'Employer workspace' : 'Administrator'}</span>
           <button className="secondary" type="button" onClick={signOut}>

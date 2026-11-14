@@ -1,5 +1,6 @@
 import "server-only";
 import oracledb from "oracledb";
+import { seedEmployers } from "@/lib/data";
 import { getOracleConnection } from "@/lib/oracle";
 
 export type AdminEmployer = {
@@ -17,6 +18,15 @@ type EmployerRow = {
 };
 
 export async function getRecentAdminEmployers(limit = 5): Promise<AdminEmployer[]> {
+  if ((process.env.AUTH_BACKEND ?? "demo") === "demo") {
+    return seedEmployers.slice(0, limit).map((employer) => ({
+      id: employer.id,
+      companyName: employer.name,
+      email: employer.email,
+      createdAt: new Date(0).toISOString(),
+    }));
+  }
+
   let connection: oracledb.Connection | undefined;
 
   try {
@@ -42,6 +52,8 @@ export async function getRecentAdminEmployers(limit = 5): Promise<AdminEmployer[
 }
 
 export async function getAdminEmployerCount(): Promise<number> {
+  if ((process.env.AUTH_BACKEND ?? "demo") === "demo") return seedEmployers.length;
+
   let connection: oracledb.Connection | undefined;
 
   try {
