@@ -38,12 +38,13 @@ export default function AdminSidebar({ fullName, currentSection }: AdminSidebarP
         {navigation.map((item) => (
           <Link
             aria-current={item.section === currentSection ? "page" : undefined}
+            aria-label={item.label}
             className={`admin-sidebar-link${item.section === currentSection ? " is-current" : ""}`}
             href={item.href}
             key={item.section}
           >
             <span aria-hidden="true">{item.icon}</span>
-            {item.label}
+            <span className="admin-sidebar-link-label">{item.label}</span>
           </Link>
         ))}
       </nav>
