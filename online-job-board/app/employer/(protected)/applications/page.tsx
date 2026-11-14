@@ -309,6 +309,5 @@ export default function ApplicationsPage() {
           />
         )}
       </div>
-    </Shell>
-  );
+    </Shell>  );
 }
