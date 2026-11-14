@@ -11,12 +11,15 @@ export default function AdminProfileForm({ fullName, email }: { fullName: string
   const initials = useMemo(() => profile.fullName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join(""), [profile.fullName]);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) setProfile((current) => ({ ...current, ...JSON.parse(stored) as Partial<AdminProfile> }));
-    } catch {
-      // The form remains editable if browser storage is unavailable.
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(storageKey);
+        if (stored) setProfile((current) => ({ ...current, ...JSON.parse(stored) as Partial<AdminProfile> }));
+      } catch {
+        // The form remains editable if browser storage is unavailable.
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function updateField(field: keyof AdminProfile, value: string) {

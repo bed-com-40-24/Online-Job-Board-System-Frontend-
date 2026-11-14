@@ -34,7 +34,7 @@ export default function EmployerDashboardOverview({ companyName }: { companyName
             <div className="employer-dashboard-welcome">
               <div>
                 <h1>Welcome, {companyName}</h1>
-                <p>Manage your organisation's vacancies and recruitment activity.</p>
+                <p>Manage your organisation&apos;s vacancies and recruitment activity.</p>
               </div>
               <Link className="employer-dashboard-primary-action" href="/employer/vacancies/new">
                 <Plus aria-hidden="true" size={16} /> Create vacancy

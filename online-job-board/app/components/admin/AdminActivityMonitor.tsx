@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useStore, type AdminActivity } from "@/lib/store";
 
 type ActivityRow = AdminActivity;
@@ -17,9 +17,12 @@ function formatActivityTime(value: string) {
 
 export default function AdminActivityMonitor() {
   const { adminActivity, employers, jobs, myApplicants } = useStore();
+  const [fallbackTimestamp, setFallbackTimestamp] = useState<number | null>(null);
 
   const fallbackActivity = useMemo(() => {
-    const now = Date.now();
+    if (fallbackTimestamp === null) return [];
+
+    const now = fallbackTimestamp;
     const events: ActivityRow[] = [];
     const reviewJobs = jobs.filter((job) => job.status === "In review");
     const recentJob = reviewJobs[0];
@@ -75,7 +78,12 @@ export default function AdminActivityMonitor() {
       });
     }
     return events;
-  }, [employers, jobs, myApplicants]);
+  }, [employers, fallbackTimestamp, jobs, myApplicants]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setFallbackTimestamp(Date.now()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const events = [...adminActivity, ...fallbackActivity].slice(0, 12);
 

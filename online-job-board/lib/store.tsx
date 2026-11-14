@@ -145,6 +145,33 @@ export function StoreProvider({
     return true;
   };
 
+  const decideEmployer: StoreContextValue['decideEmployer'] = (id, status, reason, note) => {
+    if (!can(role, 'employer.verify')) return false;
+    const employer = employers.find((entry) => entry.id === id);
+    if (!employer || employer.status !== 'Pending verification') return false;
+    if (status === 'Rejected' && !validRejection('employer', reason, note)) return false;
+    if (status !== 'Verified' && status !== 'Rejected') return false;
+
+    setEmployers((current) =>
+      current.map((entry) =>
+        entry.id === id
+          ? {
+              ...entry,
+              status,
+              reason: status === 'Rejected' ? reason : undefined,
+              note: status === 'Rejected' ? note?.trim() || undefined : undefined,
+            }
+          : entry,
+      ),
+    );
+    recordAdminActivity(
+      status === 'Verified' ? 'Employer verified' : 'Employer rejected',
+      `${employer.name} (${employer.id}) was ${status.toLowerCase()}.`,
+      '/admin/verification',
+    );
+    return true;
+  };
+
   const decideJob: StoreContextValue['decideJob'] = (
     id,
     status,

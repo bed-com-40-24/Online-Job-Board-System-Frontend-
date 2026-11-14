@@ -42,12 +42,15 @@ export default function AdminDashboardHeaderTools({ fullName }: { fullName: stri
   const unread = notifications.filter((notification) => !seen.includes(notification.id));
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("ojb-admin-seen-notifications");
-      if (saved) setSeen(JSON.parse(saved) as string[]);
-    } catch {
-      setSeen([]);
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem("ojb-admin-seen-notifications");
+        if (saved) setSeen(JSON.parse(saved) as string[]);
+      } catch {
+        setSeen([]);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
