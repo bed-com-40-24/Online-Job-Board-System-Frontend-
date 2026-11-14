@@ -2,7 +2,7 @@
 
 import type { ChangeEvent, FormEvent } from 'react';
 import type { Account, Page } from '@/lib/types';
-import { initials } from '@/app/components/shared/IdentityIcons';
+import { initials } from '@/components/shared/IdentityIcons';
 import { ScreenHeading } from './employerHelpers';
 
 export type MyProfileProps = {
