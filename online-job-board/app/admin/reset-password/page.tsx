@@ -1,4 +1,4 @@
-import AdminAuthForm from "@/app/components/admin-auth-form";
+import AdminAuthForm from "@/app/components/admin/admin-auth-form";
 
 export default async function AdminResetPasswordPage({
   searchParams,

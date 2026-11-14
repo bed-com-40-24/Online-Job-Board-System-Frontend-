@@ -7,7 +7,6 @@ import {
   type Employer,
   type Job,
   type JobStatus,
-  type OrgStatus,
   type Role,
   EMP_ID,
   REASONS,
@@ -30,7 +29,7 @@ type StoreContextValue = {
   adminActivity: AdminActivity[];
   myApplicants: Applicant[];
   setApplicantStatus: (id: string, status: AppStatus, reason?: string, note?: string) => boolean;
-  decideEmployer: (id: string, status: OrgStatus, reason?: string, note?: string) => boolean;
+  decideEmployer: (id: string, status: 'Verified' | 'Rejected', reason?: string, note?: string) => boolean;
   decideJob: (
     id: string,
     status: JobStatus,
