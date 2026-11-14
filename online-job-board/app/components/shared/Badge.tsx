@@ -10,7 +10,7 @@ export default function Badge({ status }: BadgeProps) {
       ? 'good'
       : status === 'Rejected'
         ? 'bad'
-        : status === 'New' || status === 'Pending' || status === 'In review'
+        : status === 'New' || status === 'Pending' || status === 'Pending verification' || status === 'In review'
           ? 'warn'
           : '';
 

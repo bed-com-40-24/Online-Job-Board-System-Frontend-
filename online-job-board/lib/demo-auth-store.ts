@@ -1,6 +1,5 @@
 import "server-only";
 
-import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -13,9 +12,6 @@ export type DemoAuthAccount = {
   email: string;
   passwordHash: string;
   displayName: string;
-  verificationStatus?: "Pending" | "Verified" | "Rejected";
-  verificationReason?: string;
-  verificationCheckedAt?: string;
   certificate?: {
     name: string;
     mime: string;
@@ -37,77 +33,62 @@ type DemoAuthData = {
   resetTokens: DemoResetToken[];
 };
 
+const emptyStore = (): DemoAuthData => ({
+  accounts: [],
+  loginAttempts: {},
+  resetTokens: [],
+});
+
 const storeDirectory = path.join(process.cwd(), ".data");
 const storePath = path.join(storeDirectory, "demo-auth.json");
 
 let pendingMutation: Promise<void> = Promise.resolve();
 
-const developmentDemoAccounts = [
-  {
-    type: "employer",
-    email: "employer@onlinejobboard.mw",
-    password: "Employer123!",
-    displayName: "Lakeview Technologies",
-  },
-  {
-    type: "admin",
-    email: "admin@onlinejobboard.mw",
-    password: "Admin123!",
-    displayName: "Demo Administrator",
-  },
-] as const;
-
-async function addDevelopmentDemoAccounts(data: DemoAuthData): Promise<DemoAuthData> {
-  if (process.env.NODE_ENV === "production" || process.env.AUTH_BACKEND === "oracle") return data;
-
-  for (const demoAccount of developmentDemoAccounts) {
-    if (data.accounts.some((account) => account.type === demoAccount.type && account.email === demoAccount.email)) {
-      continue;
-    }
-    data.accounts.push({
-      id: randomUUID(),
-      type: demoAccount.type,
-      email: demoAccount.email,
-      passwordHash: await bcrypt.hash(demoAccount.password, 12),
-      displayName: demoAccount.displayName,
-      verificationStatus: "Pending",
-    });
-  }
-  return data;
-}
-
 function isMissingFile(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+}
+
+function isValidStore(value: unknown): value is DemoAuthData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "accounts" in value &&
+    Array.isArray(value.accounts) &&
+    "loginAttempts" in value &&
+    typeof value.loginAttempts === "object" &&
+    value.loginAttempts !== null &&
+    "resetTokens" in value &&
+    Array.isArray(value.resetTokens)
+  );
 }
 
 async function readStore(): Promise<DemoAuthData> {
   try {
     const contents = await readFile(storePath, "utf8");
+    if (!contents.trim()) {
+      const nextStore = emptyStore();
+      await writeStore(nextStore).catch(() => undefined);
+      return nextStore;
+    }
+
     const parsed: unknown = JSON.parse(contents);
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !("accounts" in parsed) ||
-      !Array.isArray(parsed.accounts) ||
-      !("loginAttempts" in parsed) ||
-      typeof parsed.loginAttempts !== "object" ||
-      parsed.loginAttempts === null ||
-      !("resetTokens" in parsed) ||
-      !Array.isArray(parsed.resetTokens)
-    ) {
-      throw new Error("The demo authentication store has an invalid shape.");
+    if (!isValidStore(parsed)) {
+      const nextStore = emptyStore();
+      await writeStore(nextStore).catch(() => undefined);
+      return nextStore;
     }
-    for (const account of (parsed as DemoAuthData).accounts) {
-      if (account.type === "employer" && !account.verificationStatus) {
-        account.verificationStatus = "Pending";
-      }
-    }
-    return addDevelopmentDemoAccounts(parsed as DemoAuthData);
+
+    return parsed;
   } catch (error) {
     if (isMissingFile(error)) {
-      return addDevelopmentDemoAccounts({ accounts: [], loginAttempts: {}, resetTokens: [] });
+      const nextStore = emptyStore();
+      await writeStore(nextStore).catch(() => undefined);
+      return nextStore;
     }
-    throw error;
+
+    const nextStore = emptyStore();
+    await writeStore(nextStore).catch(() => undefined);
+    return nextStore;
   }
 }
 
@@ -136,19 +117,6 @@ export async function findDemoAccount(
   return mutateStore((data) =>
     data.accounts.find((account) => account.type === type && account.email === email),
   );
-}
-
-export async function getDemoEmployerVerificationRecords() {
-  return mutateStore((data) => data.accounts
-    .filter((account) => account.type === "employer")
-    .map((account) => ({
-      id: account.id,
-      companyName: account.displayName,
-      email: account.email,
-      status: account.verificationStatus ?? "Pending",
-      reason: account.verificationReason,
-      checkedAt: account.verificationCheckedAt,
-    })));
 }
 
 export async function createDemoAccount(

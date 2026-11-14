@@ -38,6 +38,7 @@ env.local
 # local demo authentication accounts
 /.data/
 
+
 # vercel
 .vercel
 

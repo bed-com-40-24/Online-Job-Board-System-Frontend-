@@ -6,7 +6,7 @@ import Badge from "@/app/components/shared/Badge";
 import type { Employer, OrgStatus } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
-const employerStatuses: OrgStatus[] = ["Pending", "Verified", "Rejected"];
+const employerStatuses: OrgStatus[] = ["Pending verification", "Verified", "Rejected"];
 
 export default function AdminEmployersManagement() {
   const { employers, jobs } = useStore();

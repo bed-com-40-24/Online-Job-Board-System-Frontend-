@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 export default function AdminDashboardOverview({ employerCount }: { employerCount?: number }) {
   const { employers, jobs, myApplicants, adminActivity } = useStore();
   const inReviewJobs = jobs.filter((job) => job.status === "In review");
-  const pendingEmployers = employers.filter((employer) => employer.status === "Pending");
+  const pendingEmployers = employers.filter((employer) => employer.status === "Pending verification");
   const publishedJobs = jobs.filter((job) => job.status === "Published");
   const overview = [
     { label: "Registered employers", count: employerCount ?? employers.length, description: "All employer accounts", href: "/admin/employers" },

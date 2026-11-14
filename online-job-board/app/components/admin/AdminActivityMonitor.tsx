@@ -17,19 +17,16 @@ function formatActivityTime(value: string) {
 
 export default function AdminActivityMonitor() {
   const { adminActivity, employers, jobs, myApplicants } = useStore();
-  const [now, setNow] = useState<number | null>(null);
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setNow(Date.now()));
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+  const [fallbackTimestamp, setFallbackTimestamp] = useState<number | null>(null);
 
   const fallbackActivity = useMemo(() => {
-    if (now === null) return [];
+    if (fallbackTimestamp === null) return [];
+
+    const now = fallbackTimestamp;
     const events: ActivityRow[] = [];
     const reviewJobs = jobs.filter((job) => job.status === "In review");
     const recentJob = reviewJobs[0];
-    const pendingEmployer = employers.find((employer) => employer.status === "Pending");
+    const pendingEmployer = employers.find((employer) => employer.status === "Pending verification");
     const publishedJob = jobs.find((job) => job.status === "Published");
     const shortlistedApplicant = myApplicants.find((applicant) => applicant.status === "Shortlisted");
 
@@ -81,7 +78,12 @@ export default function AdminActivityMonitor() {
       });
     }
     return events;
-  }, [employers, jobs, myApplicants, now]);
+  }, [employers, fallbackTimestamp, jobs, myApplicants]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setFallbackTimestamp(Date.now()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const events = [...adminActivity, ...fallbackActivity].slice(0, 12);
 

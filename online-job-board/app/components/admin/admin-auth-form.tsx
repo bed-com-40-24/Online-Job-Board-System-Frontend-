@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import BrandMark from "@/app/components/shared/brand-mark";
+import BrandMark from "@/app/components/brand-mark";
 import {
   loginAdmin,
   registerAdmin,
@@ -53,22 +53,10 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
     authAction,
     {},
   );
-  const [remainingLockSeconds, setRemainingLockSeconds] = useState(0);
   const handledRedirect = useRef(false);
   const details = modeDetails[mode];
   const hasToken = mode !== "reset" || Boolean(token);
   const loginLocked = mode === "login" && remainingLockSeconds > 0;
-
-  useEffect(() => {
-    if (!actionState.retryAfter) return;
-    const expiresAt = Date.now() + actionState.retryAfter * 1000;
-    const updateRemaining = () => {
-      setRemainingLockSeconds(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
-    };
-    updateRemaining();
-    const interval = window.setInterval(updateRemaining, 1000);
-    return () => window.clearInterval(interval);
-  }, [actionState.retryAfter]);
 
   useEffect(() => {
     if (!actionState.redirectTo || handledRedirect.current) return;
@@ -198,20 +186,10 @@ export default function AdminAuthForm({ mode, token }: AdminAuthFormProps) {
                 )}
 
                 {actionState.error && <p className="employer-auth-error" role="alert">{actionState.error}</p>}
-                {loginLocked && (
-                  <p className="employer-auth-error" role="status">
-                    Sign-in is temporarily locked. Try again in {remainingLockSeconds} seconds.
-                  </p>
-                )}
                 {actionState.success && <p className="employer-auth-success" role="status">{actionState.success}</p>}
-                {actionState.resetUrl && (
-                  <p className="employer-auth-switch">
-                    <Link className="employer-auth-link" href={actionState.resetUrl}>Open demo password reset</Link>
-                  </p>
-                )}
 
-                <button className="employer-auth-submit" disabled={pending || loginLocked} type="submit">
-                  {loginLocked ? `Try again in ${remainingLockSeconds}s` : submitLabel}
+                <button className="employer-auth-submit" disabled={pending} type="submit">
+                  {submitLabel}
                 </button>
               </form>
             )}

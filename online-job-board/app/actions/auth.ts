@@ -11,7 +11,6 @@ import {
   getEmployerSession,
 } from "@/lib/employer-session";
 import { sendPasswordResetEmail } from "@/lib/mail";
-import { verifyEmployer } from "@/lib/employer-verification";
 import {
   clearDemoLoginFailures,
   createDemoAccount,
@@ -349,18 +348,6 @@ export async function registerEmployer(
     .replace(/\.[^.]*$/, "")
     .slice(0, 240);
   const certificateName = `${certificateBaseName || "business-registration-certificate"}${certificateExtension}`;
-  const verification = await verifyEmployer({
-    companyName,
-    email,
-    physicalBusinessAddress,
-    companyPhone,
-    representativeName,
-    representativePosition,
-    certificate: certificateBuffer,
-    certificateName,
-    certificateMime,
-  });
-  const verificationCheckedAt = verification.checked ? new Date().toISOString() : undefined;
 
   if (getAuthBackend() === "demo") {
     try {
@@ -370,9 +357,6 @@ export async function registerEmployer(
         email,
         passwordHash,
         displayName: companyName,
-        verificationStatus: verification.status,
-        verificationReason: verification.reason,
-        verificationCheckedAt,
         certificate: {
           name: certificateName,
           mime: certificateMime,
@@ -380,13 +364,7 @@ export async function registerEmployer(
         },
       });
       if (!created) return { error: "An account with that email address already exists." };
-      return {
-        success: verification.status === "Verified"
-          ? "Employer account created and automatically verified. You can now sign in."
-          : verification.status === "Rejected"
-            ? "Employer account created, but verification was rejected. Vacancy publishing is disabled."
-            : "Employer account created with Pending verification status. Vacancy publishing is disabled until a trusted verification result is available.",
-      };
+      return { success: "Test employer account created locally. You can now sign in." };
     } catch (error) {
       console.error("Demo employer registration failed.", error);
       return { error: "The local demo account could not be saved. Check that the project folder is writable." };
@@ -401,13 +379,11 @@ export async function registerEmployer(
       `INSERT INTO employers (
          email, password_hash, company_name, business_registration_certificate_file,
          business_registration_certificate_name, business_registration_certificate_mime,
-         physical_business_address, company_phone, representative_name, representative_position,
-         verification_status, verification_reason, verification_checked_at
+         physical_business_address, company_phone, representative_name, representative_position
        ) VALUES (
          :email, :passwordHash, :companyName, :certificateFile,
          :certificateName, :certificateMime,
-         :physicalBusinessAddress, :companyPhone, :representativeName, :representativePosition,
-         :verificationStatus, :verificationReason, :verificationCheckedAt
+         :physicalBusinessAddress, :companyPhone, :representativeName, :representativePosition
        )`,
       {
         email,
@@ -420,9 +396,6 @@ export async function registerEmployer(
         companyPhone,
         representativeName,
         representativePosition,
-        verificationStatus: verification.status,
-        verificationReason: verification.reason ?? null,
-        verificationCheckedAt: verificationCheckedAt ? new Date(verificationCheckedAt) : null,
       },
       { autoCommit: true },
     );
@@ -446,13 +419,7 @@ export async function registerEmployer(
     await connection?.close();
   }
 
-  return {
-    success: verification.status === "Verified"
-      ? "Employer account created and automatically verified. You can now sign in."
-      : verification.status === "Rejected"
-        ? "Employer account created, but verification was rejected. Vacancy publishing is disabled."
-        : "Employer account created with Pending verification status. Vacancy publishing is disabled until a trusted verification result is available.",
-  };
+  return { success: "Your employer account has been created. You can now sign in." };
 }
 
 export async function updateEmployerCompanyName(

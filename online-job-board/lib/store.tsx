@@ -80,9 +80,11 @@ export function StoreProvider({
   const [role, setRole] = useState<Role | null>(() => initialRole);
   const [ready, setReady] = useState(() => initialRole !== null);
   const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants);
-  const [employers] = useState<Employer[]>(() => seedEmployers.map((employer) => ({
+  const [employers, setEmployers] = useState<Employer[]>(() => seedEmployers.map((employer) => ({
     ...employer,
-    status: getEmployerVerificationStatus(employer),
+    status: employer.status === 'Rejected'
+      ? 'Rejected'
+      : getEmployerVerificationStatus(employer),
   })));
   const [jobs, setJobs] = useState<Job[]>(seedJobs);
   const [adminActivity, setAdminActivity] = useState<AdminActivity[]>([]);
@@ -140,6 +142,33 @@ export function StoreProvider({
       ),
     );
     recordAdminActivity('Application status updated', `Updated ${applicant.name}'s application for ${applicant.job}.`, '/admin/activity');
+    return true;
+  };
+
+  const decideEmployer: StoreContextValue['decideEmployer'] = (id, status, reason, note) => {
+    if (!can(role, 'employer.verify')) return false;
+    const employer = employers.find((entry) => entry.id === id);
+    if (!employer || employer.status !== 'Pending verification') return false;
+    if (status === 'Rejected' && !validRejection('employer', reason, note)) return false;
+    if (status !== 'Verified' && status !== 'Rejected') return false;
+
+    setEmployers((current) =>
+      current.map((entry) =>
+        entry.id === id
+          ? {
+              ...entry,
+              status,
+              reason: status === 'Rejected' ? reason : undefined,
+              note: status === 'Rejected' ? note?.trim() || undefined : undefined,
+            }
+          : entry,
+      ),
+    );
+    recordAdminActivity(
+      status === 'Verified' ? 'Employer verified' : 'Employer rejected',
+      `${employer.name} (${employer.id}) was ${status.toLowerCase()}.`,
+      '/admin/verification',
+    );
     return true;
   };
 
