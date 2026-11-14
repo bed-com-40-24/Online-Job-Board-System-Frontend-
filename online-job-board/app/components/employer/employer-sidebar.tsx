@@ -37,11 +37,13 @@ export default function EmployerSidebar({ companyName, currentSection }: Employe
         {navigation.map((item) => (
           <Link
             aria-current={item.section === currentSection ? "page" : undefined}
+            aria-label={item.label}
             className={item.section === currentSection ? "is-current" : undefined}
             href={item.href}
             key={item.section}
           >
-            <span aria-hidden="true">{item.icon}</span> {item.label}
+            <span aria-hidden="true">{item.icon}</span>
+            <span className="employer-dashboard-nav-label">{item.label}</span>
           </Link>
         ))}
       </nav>

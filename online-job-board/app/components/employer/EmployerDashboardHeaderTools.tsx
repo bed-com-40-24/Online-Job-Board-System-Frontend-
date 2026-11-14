@@ -10,11 +10,29 @@ type DashboardNotification = { id: string; title: string; detail: string; action
 
 export default function EmployerDashboardHeaderTools({ part }: { part: "sidebar" | "notifications" }) {
   const router = useRouter();
-  const { jobs, myApplicants } = useStore();
+  const { employers, jobs, myApplicants } = useStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [seen, setSeen] = useState<string[]>([]);
   const employerJobs = jobs.filter((job) => job.owner === EMP_ID);
+  const employerProfile = employers.find((employer) => employer.id === EMP_ID);
+  const verificationNotification: DashboardNotification[] = employerProfile
+    ? [{
+        id: `employer-verification:${employerProfile.id}:${employerProfile.status}`,
+        title: employerProfile.status === "Verified"
+          ? "Employer profile verified"
+          : employerProfile.status === "Rejected"
+            ? "Employer verification needs attention"
+            : "Verification in progress",
+        detail: employerProfile.status === "Verified"
+          ? "Your company profile has been verified. You can continue managing your vacancies."
+          : employerProfile.status === "Rejected"
+            ? "Please review your company details and contact support if you need help."
+            : "Your company profile is awaiting administrator verification.",
+        action: "View profile",
+        href: "/employer/profile",
+      }]
+    : [];
   const notifications: DashboardNotification[] = [
     ...myApplicants
       .filter((applicant) => applicant.status === "Pending" || applicant.status === "New")
@@ -36,6 +54,7 @@ export default function EmployerDashboardHeaderTools({ part }: { part: "sidebar"
         action: "View vacancy",
         href: "/employer/vacancies",
       })),
+    ...verificationNotification,
   ];
   const unread = notifications.filter((notification) => !seen.includes(notification.id));
 
