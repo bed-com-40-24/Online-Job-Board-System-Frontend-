@@ -31,6 +31,19 @@ npm install
 npm run dev
 ```
 
+## Run with Docker
+
+For the demo authentication backend, set separate random values for `SESSION_SECRET` and `ADMIN_SIGNUP_KEY` in the shell where you will run Docker Compose. Each value must be at least 32 characters. On PowerShell:
+
+```powershell
+$env:AUTH_BACKEND = "demo"
+$env:SESSION_SECRET = (node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))")
+$env:ADMIN_SIGNUP_KEY = (node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))")
+docker compose up --build
+```
+
+Open `http://localhost:3000/admin/register` and enter the value of `$env:ADMIN_SIGNUP_KEY` to create an administrator account. Then sign in with the email and password you registered. Employer accounts can be created at `http://localhost:3000/employer/register`. The demo accounts are stored in a named Docker volume and persist when the container is recreated. The Docker image does not copy `.env.local`; set required runtime values in the shell before starting Compose.
+
 Next.js compiles pages on first visit in development, so use a production build when measuring page response times:
 
 ```bash

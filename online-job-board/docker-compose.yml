@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      AUTH_BACKEND: ${AUTH_BACKEND:-demo}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET before starting Docker Compose}
+      ADMIN_SIGNUP_KEY: ${ADMIN_SIGNUP_KEY:?Set ADMIN_SIGNUP_KEY before starting Docker Compose}
+    volumes:
+      - demo-auth-data:/app/.data
+
+volumes:
+  demo-auth-data:
