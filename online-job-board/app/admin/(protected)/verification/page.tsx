@@ -38,7 +38,12 @@ export default async function EmployerVerificationPage() {
             <p>The system checks business profile details automatically.</p>
           </div>
         </div>
-        <section aria-label="Automatic employer verification results" className="admin-panel">
+        {admin.accessToken ? (
+          <section aria-label="Employer verification unavailable" className="admin-panel">
+            <p>Certificate review is unavailable: the backend API does not currently accept or expose business-registration documents. Employer access requests can be reviewed from the employer management page.</p>
+            <Link className="admin-panel-button" href="/admin/employers">Review employer requests</Link>
+          </section>
+        ) : <section aria-label="Automatic employer verification results" className="admin-panel">
           <p className="muted">Automatic screening checks that required details are present and formatted correctly. It does not query an external business registry.</p>
           <div className="admin-table-wrap" role="region" tabIndex={0}>
             <table className="admin-employer-table">
@@ -57,7 +62,7 @@ export default async function EmployerVerificationPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </section>}
       </section>
     </main>
   );

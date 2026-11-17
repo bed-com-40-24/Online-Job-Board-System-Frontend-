@@ -34,7 +34,11 @@ export default async function AdminJobsPage() {
             <p>Review submitted vacancies.</p>
           </div>
         </div>
-        <AdminJobModeration />
+        {admin.accessToken ? (
+          <p className="admin-panel" role="status">
+            Job moderation is unavailable: the backend API does not currently provide administrator job-review endpoints. Demo moderation controls are disabled to avoid suggesting they update backend data.
+          </p>
+        ) : <AdminJobModeration />}
       </section>
     </main>
   );

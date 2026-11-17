@@ -27,7 +27,9 @@ export default async function AdminJobDetailsPage({
         <AdminDashboardHeaderTools fullName={admin.fullName} />
       </header>
       <section className="admin-workspace-content admin-job-details-page">
-        <AdminJobDetails jobId={id} />
+        {admin.accessToken
+          ? <p className="admin-panel" role="status">Backend job details and moderation are unavailable because the current API does not expose administrator job-review endpoints.</p>
+          : <AdminJobDetails jobId={id} />}
       </section>
     </main>
   );
