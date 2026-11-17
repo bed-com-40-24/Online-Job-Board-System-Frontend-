@@ -22,6 +22,7 @@ import { can } from './permissions';
 type StoreContextValue = {
   role: Role | null;
   ready: boolean;
+  backendMode: boolean;
   login: (role: Role) => void;
   logout: () => void;
   employers: Employer[];
@@ -74,20 +75,26 @@ function validRejection(category: keyof typeof REASONS, reason?: string, note?: 
 export function StoreProvider({
   children,
   initialRole = null,
+  initialJobs,
+  initialApplicants,
+  backendMode = false,
 }: {
   children: ReactNode;
   initialRole?: Role | null;
+  initialJobs?: Job[];
+  initialApplicants?: Applicant[];
+  backendMode?: boolean;
 }) {
   const [role, setRole] = useState<Role | null>(() => initialRole);
   const [ready, setReady] = useState(() => initialRole !== null);
-  const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants);
+  const [applicants, setApplicants] = useState<Applicant[]>(initialApplicants ?? seedApplicants);
   const [employers, setEmployers] = useState<Employer[]>(() => seedEmployers.map((employer) => ({
     ...employer,
     status: employer.status === 'Rejected'
       ? 'Rejected'
       : getEmployerVerificationStatus(employer),
   })));
-  const [jobs, setJobs] = useState<Job[]>(seedJobs);
+  const [jobs, setJobs] = useState<Job[]>(initialJobs ?? seedJobs);
   const [adminActivity, setAdminActivity] = useState<AdminActivity[]>([]);
 
   const recordAdminActivity = (title: string, detail: string, href: string) => {
@@ -261,6 +268,7 @@ export function StoreProvider({
       value={{
         role,
         ready,
+        backendMode,
         login,
         logout,
         employers,

@@ -1,21 +1,25 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import Badge from '@/app/components/shared/Badge';
 import ReasonDialog from '@/app/components/shared/ReasonDialog';
 import HistoryNavigation from '@/app/components/shared/HistoryNavigation';
 import { APP_STATUSES, type AppStatus, type Applicant } from '@/lib/data';
 import { useStore } from '@/lib/store';
+import { updateEmployerApplicationStatus } from '@/app/actions/employer-workspace';
+import { useRouter } from 'next/navigation';
 
 type NoticeMessage = { kind: 'success' | 'error'; text: string };
 
 export default function ApplicationsPage() {
-  const { myApplicants, setApplicantStatus, ready } = useStore();
+  const { myApplicants, setApplicantStatus, ready, backendMode } = useStore();
+  const router = useRouter();
   const [filter, setFilter] = useState<AppStatus | 'All'>('All');
   const [search, setSearch] = useState('');
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
   const [rejectionApplicant, setRejectionApplicant] = useState<Applicant | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
+  const [isSaving, startTransition] = useTransition();
 
   const counts = useMemo(
     () => ({
@@ -46,8 +50,23 @@ export default function ApplicationsPage() {
     if (status === applicant.status) return;
     setNotice(null);
 
-    if (status === 'Rejected') {
+    if (status === 'Rejected' && !backendMode) {
       setRejectionApplicant(applicant);
+      return;
+    }
+
+    if (backendMode) {
+      if (applicant.status !== 'New' || (status !== 'Shortlisted' && status !== 'Rejected')) return;
+      startTransition(async () => {
+        const formData = new FormData();
+        formData.set('applicationId', applicant.id);
+        formData.set('status', status === 'Shortlisted' ? 'SHORTLISTED' : 'REJECTED');
+        const result = await updateEmployerApplicationStatus({}, formData);
+        setNotice(result.success
+          ? { kind: 'success', text: `${applicant.name} was ${status.toLowerCase()}.` }
+          : { kind: 'error', text: result.error ?? 'The application status could not be updated.' });
+        if (result.success) router.refresh();
+      });
       return;
     }
 
@@ -83,7 +102,9 @@ export default function ApplicationsPage() {
               Review candidates for your vacancies and manage their application status.
             </p>
             <p className="notice" role="note">
-              This workflow uses sample applicants. Status changes are not saved to Oracle.
+              {backendMode
+                ? 'Applications and review decisions are loaded from the recruitment backend.'
+                : 'This workflow uses sample applicants. Status changes are not saved to Oracle.'}
             </p>
           </div>
         </header>
@@ -183,8 +204,9 @@ export default function ApplicationsPage() {
                         >
                           View details
                         </button>
-                        {applicant.status === 'Pending' && (
+                        {(applicant.status === 'Pending' || (backendMode && applicant.status === 'New')) && (
                           <button
+                            disabled={isSaving}
                             type="button"
                             className="primary"
                             onClick={() => changeStatus(applicant, 'Shortlisted')}
@@ -192,7 +214,7 @@ export default function ApplicationsPage() {
                             Shortlist
                           </button>
                         )}
-                        {applicant.status === 'Shortlisted' && (
+                        {applicant.status === 'Shortlisted' && !backendMode && (
                           <button
                             type="button"
                             className="primary"
@@ -201,11 +223,21 @@ export default function ApplicationsPage() {
                             Accept
                           </button>
                         )}
-                        {applicant.status !== 'Rejected' && applicant.status !== 'Accepted' && (
+                        {!backendMode && applicant.status !== 'Rejected' && applicant.status !== 'Accepted' && (
                           <button
                             type="button"
                             className="danger"
                             onClick={() => changeStatus(applicant, 'Rejected')}
+                          >
+                            Reject
+                          </button>
+                        )}
+                        {backendMode && applicant.status === 'New' && (
+                          <button
+                            className="danger"
+                            disabled={isSaving}
+                            onClick={() => changeStatus(applicant, 'Rejected')}
+                            type="button"
                           >
                             Reject
                           </button>
