@@ -9,6 +9,8 @@ export type AdminSession = {
   id: string;
   email: string;
   fullName: string;
+  accessToken?: string;
+  expiresIn?: number;
 };
 
 function sessionKey() {
@@ -24,14 +26,22 @@ function sessionKey() {
 export async function createAdminSession(admin: AdminSession) {
   const secret = sessionKey();
   const cookieStore = await cookies();
+  const duration = Math.min(
+    Math.max(admin.expiresIn ?? sessionDurationSeconds, 60),
+    sessionDurationSeconds,
+  );
 
-  const token = await new SignJWT({ email: admin.email, fullName: admin.fullName })
+  const token = await new SignJWT({
+    email: admin.email,
+    fullName: admin.fullName,
+    accessToken: admin.accessToken,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer("online-job-board-admin")
     .setAudience("online-job-board-admin")
     .setSubject(admin.id)
     .setIssuedAt()
-    .setExpirationTime("8h")
+    .setExpirationTime(`${duration}s`)
     .sign(secret);
 
   cookieStore.set(cookieName, token, {
@@ -39,7 +49,7 @@ export async function createAdminSession(admin: AdminSession) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: sessionDurationSeconds,
+    maxAge: duration,
   });
 }
 
@@ -60,12 +70,18 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     if (
       typeof payload.sub !== "string" ||
       typeof payload.email !== "string" ||
-      typeof payload.fullName !== "string"
+      typeof payload.fullName !== "string" ||
+      (payload.accessToken !== undefined && typeof payload.accessToken !== "string")
     ) {
       return null;
     }
 
-    return { id: payload.sub, email: payload.email, fullName: payload.fullName };
+    return {
+      id: payload.sub,
+      email: payload.email,
+      fullName: payload.fullName,
+      accessToken: payload.accessToken,
+    };
   } catch {
     return null;
   }
