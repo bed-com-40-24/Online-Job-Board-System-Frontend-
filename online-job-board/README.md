@@ -1,6 +1,6 @@
 # OnlineJobBoard Authentication
 
-Employer and administrator accounts use a local demo store by default so the app can be tested before Oracle is ready. Set `AUTH_BACKEND=oracle` to use the Oracle backend. The demo store is for single-machine testing only and is not suitable for production or multiple application instances. Administrator registration requires a private `ADMIN_SIGNUP_KEY`.
+Employer and administrator accounts use a local demo store by default so the app can be tested before a backend is ready. Set `AUTH_BACKEND=oracle` to use the Oracle backend, or `AUTH_BACKEND=api` to use the recruitment backend API for authentication and employer approval. The demo store is for single-machine testing only and is not suitable for production or multiple application instances. Local administrator registration requires a private `ADMIN_SIGNUP_KEY`; API-mode administrator accounts are provisioned by the backend team.
 
 ## Requirements
 
@@ -30,6 +30,31 @@ To open password-reset links on a phone as well as this computer during local de
 npm install
 npm run dev
 ```
+
+## Run with Docker
+
+Create `.env.local` in the project root and set `AUTH_BACKEND=demo`, plus separate random values for `SESSION_SECRET` and `ADMIN_SIGNUP_KEY` (at least 32 characters each; see [Configure the app](#configure-the-app) for generating them). Compose passes this file into the container; it is not copied into the image.
+
+Build and start the app:
+
+```bash
+docker compose up --build -d
+docker compose logs -f app
+```
+
+Open [http://localhost:3000](http://localhost:3000). Stop the app with `docker compose down`. Demo accounts and login data persist in the `demo_auth_data` Docker volume across restarts. `docker compose down -v` also removes that volume and its data.
+
+To connect to an Oracle database running on the Docker host, use `host.docker.internal:1521/XEPDB1` for `ORACLE_CONNECT_STRING` in `.env.local`; the Compose service includes the host mapping for Linux.
+
+## Recruitment backend API
+
+The frontend can use the separate recruitment API for account sign-in and employer approval. Set `AUTH_BACKEND=api` and `BACKEND_API_URL` in `.env.local`, for example `http://localhost:8080` when the frontend runs directly on the host. Keep `BACKEND_API_URL` server-only; it must not use a `NEXT_PUBLIC_` prefix. Keep `SESSION_SECRET` configured as described above. Restart/recreate the frontend after changing environment variables.
+
+Employer signup creates an account through the API and submits an employer access request. An administrator account must be provisioned by the backend team; administrator registration is disabled in API mode. Administrators can approve or reject requests from **Employer management**.
+
+When running the frontend in Docker, `localhost` points to the frontend container, not the host. Set `BACKEND_API_URL` to an address reachable from that container and make sure the backend is listening on an interface/network the frontend container can access. The provided backend Compose file publishes port 8080 only on host loopback, so that default binding is not reachable from a separate container. Do not expose the backend publicly just to make local containers communicate.
+
+The current backend API supports employer vacancy management and employer-side application review, now connected to the employer workspace. It does not expose endpoints for administrator job moderation, employer certificate review, admin activity history, or profile editing. Those unsupported screens are disabled in API mode instead of displaying demo records.
 
 Next.js compiles pages on first visit in development, so use a production build when measuring page response times:
 
