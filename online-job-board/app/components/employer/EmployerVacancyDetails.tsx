@@ -2,17 +2,28 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { StatusBadge } from "@/app/components/shared/StatusBadge";
 import HistoryNavigation from "@/app/components/shared/HistoryNavigation";
 import { EMP_ID } from "@/lib/data";
 import { useStore } from "@/lib/store";
+import {
+  closeEmployerJob as closeBackendJob,
+  deleteEmployerJob as deleteBackendJob,
+  type EmployerWorkspaceActionState,
+} from "@/app/actions/employer-workspace";
 
 export default function EmployerVacancyDetails({ jobId }: { jobId: string }) {
   const router = useRouter();
-  const { jobs, myApplicants, setEmployerJobStatus, deleteEmployerJob } = useStore();
+  const { jobs, myApplicants, setEmployerJobStatus, deleteEmployerJob, backendMode } = useStore();
   const [notice, setNotice] = useState("");
+  const [closeState, closeAction, closePending] = useActionState<EmployerWorkspaceActionState, FormData>(closeBackendJob, {});
+  const [deleteState, deleteAction, deletePending] = useActionState<EmployerWorkspaceActionState, FormData>(deleteBackendJob, {});
   const job = jobs.find((entry) => entry.id === jobId && entry.owner === EMP_ID);
+
+  useEffect(() => {
+    if (deleteState.success) router.push("/employer/vacancies");
+  }, [deleteState.success, router]);
 
   if (!job) {
     return (
@@ -58,6 +69,9 @@ export default function EmployerVacancyDetails({ jobId }: { jobId: string }) {
             <p>{job.id} | {job.dept || "Other"} | {job.loc}</p>
           </div>
           {notice && <p className="notice" role="status">{notice}</p>}
+          {closeState.error && <p className="notice" role="alert">{closeState.error}</p>}
+          {closeState.success && <p className="notice" role="status">{closeState.success}</p>}
+          {deleteState.error && <p className="notice" role="alert">{deleteState.error}</p>}
         </div>
       </div>
 
@@ -79,29 +93,38 @@ export default function EmployerVacancyDetails({ jobId }: { jobId: string }) {
             {job.status === "Closed" ? (
             <>
               <p role="status">This vacancy is closed. You can permanently delete it if you no longer need it.</p>
-              <button className="employer-vacancy-delete-action" onClick={removeVacancy} type="button">
-                Delete vacancy
-              </button>
+              {backendMode ? (
+                <form action={deleteAction}>
+                  <input name="jobId" type="hidden" value={job.id} />
+                  <button className="employer-vacancy-delete-action" disabled={deletePending} type="submit">Delete vacancy</button>
+                </form>
+              ) : <button className="employer-vacancy-delete-action" onClick={removeVacancy} type="button">Delete vacancy</button>}
             </>
           ) : (
               <>
                 <Link className="employer-vacancy-edit-action" href={`/employer/vacancies/new?id=${encodeURIComponent(job.id)}`}>
                   Edit vacancy
                 </Link>
-                <button
+                {!backendMode && <button
                   className="employer-vacancy-submit-action"
                   disabled={job.status !== "Draft"}
                   onClick={() => changeStatus("In review")}
                   type="button"
                 >
                   {job.status === "Draft" ? "Submit for review" : "Already submitted"}
-                </button>
-                <button className="employer-vacancy-close-action" onClick={() => changeStatus("Closed")} type="button">
-                  Close vacancy
-                </button>
-                <button className="employer-vacancy-delete-action" onClick={removeVacancy} type="button">
-                  Delete vacancy
-                </button>
+                </button>}
+                {backendMode ? (
+                  <form action={closeAction}>
+                    <input name="jobId" type="hidden" value={job.id} />
+                    <button className="employer-vacancy-close-action" disabled={closePending} type="submit">Close vacancy</button>
+                  </form>
+                ) : <button className="employer-vacancy-close-action" onClick={() => changeStatus("Closed")} type="button">Close vacancy</button>}
+                {backendMode ? (
+                  <form action={deleteAction}>
+                    <input name="jobId" type="hidden" value={job.id} />
+                    <button className="employer-vacancy-delete-action" disabled={deletePending} type="submit">Delete vacancy</button>
+                  </form>
+                ) : <button className="employer-vacancy-delete-action" onClick={removeVacancy} type="button">Delete vacancy</button>}
               </>
             )}
           </div>

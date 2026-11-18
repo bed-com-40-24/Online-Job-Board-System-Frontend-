@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        AUTH_BACKEND: api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      BACKEND_API_URL: http://backend:8080
+    volumes:
+      - demo_auth_data:/app/.data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - recruitment-backend
+    restart: unless-stopped
+
+volumes:
+  demo_auth_data:
+
+networks:
+  recruitment-backend:
+    external: true
+    name: online-job-recruitment-platform-deployment_default

@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useActionState, useState, type FormEvent } from "react";
+import { saveEmployerJob, type EmployerWorkspaceActionState } from "@/app/actions/employer-workspace";
 import { EMP_ID } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 export default function CreateVacancyForm({ jobId }: { jobId?: string }) {
-  const { jobs, createEmployerJob, updateEmployerJob } = useStore();
+  const { jobs, createEmployerJob, updateEmployerJob, backendMode } = useStore();
   const existingJob = jobs.find((job) => job.id === jobId && job.owner === EMP_ID);
   const [message, setMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [apiState, apiAction, apiPending] = useActionState<EmployerWorkspaceActionState, FormData>(
+    saveEmployerJob,
+    {},
+  );
 
   if (jobId && !existingJob) {
     return <p className="notice" role="status">This vacancy could not be found in your account.</p>;
@@ -56,28 +61,29 @@ export default function CreateVacancyForm({ jobId }: { jobId?: string }) {
   }
 
   return (
-    <form className="panel create-vacancy-form" onSubmit={handleSubmit}>
+    <form action={backendMode ? apiAction : undefined} className="panel create-vacancy-form" onSubmit={backendMode ? undefined : handleSubmit}>
+      {backendMode && jobId && <input name="jobId" type="hidden" value={jobId} />}
       <div className="formgrid">
         <div className="field">
           <label htmlFor="vacancy-title">Job title *</label>
           <input id="vacancy-title" name="title" required minLength={3} defaultValue={existingJob?.title} placeholder="Frontend Developer" />
         </div>
-        <div className="field">
+        {!backendMode && <div className="field">
           <label htmlFor="vacancy-department">Department *</label>
           <select id="vacancy-department" name="dept" required defaultValue={existingJob?.dept || "Engineering"}>
             {['Engineering', 'Product', 'Operations', 'Analytics', 'Human Resources', 'Finance', 'Other'].map((department) => (
               <option key={department} value={department}>{department}</option>
             ))}
           </select>
-        </div>
-        <div className="field">
+        </div>}
+        {!backendMode && <div className="field">
           <label htmlFor="vacancy-type">Employment type *</label>
           <select id="vacancy-type" name="type" required defaultValue={existingJob?.type || "Full-time"}>
             {['Full-time', 'Part-time', 'Contract', 'Internship', 'Temporary'].map((type) => (
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
-        </div>
+        </div>}
         <div className="field">
           <label htmlFor="vacancy-location">Location *</label>
           <input id="vacancy-location" name="loc" required defaultValue={existingJob?.loc} placeholder="Lilongwe, Malawi" />
@@ -86,10 +92,10 @@ export default function CreateVacancyForm({ jobId }: { jobId?: string }) {
           <label htmlFor="vacancy-deadline">Application deadline *</label>
           <input id="vacancy-deadline" name="deadline" type="date" required defaultValue={existingJob?.deadline} />
         </div>
-        <div className="field">
+        {!backendMode && <div className="field">
           <label htmlFor="vacancy-openings">Number of openings</label>
           <input id="vacancy-openings" name="openings" type="number" min={1} defaultValue={existingJob?.openings || 1} />
-        </div>
+        </div>}
         <div className="field wide">
           <label htmlFor="vacancy-description">Job description *</label>
           <textarea id="vacancy-description" name="description" required minLength={20} defaultValue={existingJob?.description} />
@@ -100,11 +106,19 @@ export default function CreateVacancyForm({ jobId }: { jobId?: string }) {
         </div>
       </div>
 
-      <p className="notice create-vacancy-accuracy-notice">Please check that the information you’ve entered is accurate before saving or submitting your vacancy.</p>
+      <p className="notice create-vacancy-accuracy-notice">{backendMode
+        ? "The backend API does not support draft vacancies, department, employment type, or opening count. Submitting creates a live vacancy."
+        : "Please check that the information you’ve entered is accurate before saving or submitting your vacancy."}</p>
       {existingJob && <p className="notice">Editing updates this vacancy in place and does not submit it again. Current status: {existingJob.status}.</p>}
       {message && <p className="notice create-vacancy-success" role="status">{message}</p>}
+      {apiState.error && <p className="notice" role="alert">{apiState.error}</p>}
+      {apiState.success && <p className="notice create-vacancy-success" role="status">{apiState.success}</p>}
       <div className="create-vacancy-actions">
-        {existingJob ? (
+        {backendMode ? (
+          <button className="create-vacancy-save-draft" disabled={apiPending} type="submit">
+            {apiPending ? "Saving…" : existingJob ? "Save changes" : "Publish vacancy"}
+          </button>
+        ) : existingJob ? (
           <button className="create-vacancy-save-draft" disabled={isSaving} type="submit">Save changes</button>
         ) : (
           <>

@@ -11,7 +11,7 @@ import { getAdminSession } from "@/lib/admin-session";
 export default async function AdminDashboardPage() {
   const admin = await getAdminSession();
   if (!admin) redirect("/admin/login");
-  const employerCount = await getAdminEmployerCount();
+  const employerCount = admin.accessToken ? undefined : await getAdminEmployerCount();
 
   return (
     <main className="admin-workspace">
@@ -34,11 +34,21 @@ export default async function AdminDashboardPage() {
           <div>
             <p className="admin-eyebrow">ADMINISTRATOR WORKSPACE</p>
             <h1>Platform overview</h1>
-            <p>Verify employers, moderate submitted jobs and monitor platform activity.</p>
+            <p>{admin.accessToken
+              ? "Manage employer approval requests from the connected recruitment backend."
+              : "Verify employers, moderate submitted jobs and monitor platform activity."}</p>
           </div>
         </div>
 
-        <AdminDashboardOverview employerCount={employerCount} />
+        {admin.accessToken ? (
+          <section aria-label="Backend administration" className="admin-panel">
+            <h2>Backend-connected administration</h2>
+            <p>Employer approval is available. Job moderation, certificate review, account management, and activity history are not exposed by the current backend API, so those demo screens are disabled in backend mode.</p>
+            <Link className="admin-panel-button" href="/admin/employers">Review employer requests</Link>
+          </section>
+        ) : (
+          <AdminDashboardOverview employerCount={employerCount} />
+        )}
       </section>
     </main>
   );

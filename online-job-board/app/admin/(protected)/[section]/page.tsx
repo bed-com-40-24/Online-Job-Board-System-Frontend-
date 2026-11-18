@@ -55,7 +55,17 @@ export default async function AdminSectionPage({
           </div>
         </div>
 
-        {section === "activity" ? <AdminActivityMonitor /> : <AdminProfileForm email={admin.email} fullName={admin.fullName} />}
+        {admin.accessToken ? (
+          <p className="admin-panel" role="status">
+            {section === "activity"
+              ? "Backend activity history is not available because the current API does not expose an activity endpoint."
+              : "Administrator profile editing is not available because the current API does not expose profile update endpoints."}
+          </p>
+        ) : (
+          section === "activity"
+            ? <AdminActivityMonitor />
+            : <AdminProfileForm email={admin.email} fullName={admin.fullName} />
+        )}
       </section>
     </main>
   );

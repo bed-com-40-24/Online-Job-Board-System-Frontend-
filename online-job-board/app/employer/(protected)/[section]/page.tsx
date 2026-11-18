@@ -72,7 +72,15 @@ export default async function EmployerModulePage({
             <p className="employer-module-description">{moduleInfo.description}</p>
           </div>
         </div>
-        {section === "profile" ? (
+        {section === "profile" && employer.accessToken ? (
+          <div className="employer-module-placeholder" role="status">
+            <span className="employer-module-placeholder-mark" aria-hidden="true">i</span>
+            <div>
+              <h2>Company profile editing is unavailable</h2>
+              <p>The backend API does not expose a company profile update endpoint. Company information is created from your approved employer request when you publish your first vacancy.</p>
+            </div>
+          </div>
+        ) : section === "profile" ? (
           <EmployerProfileForm
             address={employerDetails?.address === "Lilongwe" ? "Lilongwe, Malawi" : employerDetails?.address ?? ""}
             companyName={employer.companyName}
