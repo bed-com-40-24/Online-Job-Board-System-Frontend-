@@ -16,7 +16,7 @@ function formatActivityTime(value: string) {
 }
 
 export default function AdminActivityMonitor() {
-  const { adminActivity, employers, jobs, myApplicants } = useStore();
+  const { adminActivity, employers } = useStore();
   const [fallbackTimestamp, setFallbackTimestamp] = useState<number | null>(null);
 
   const fallbackActivity = useMemo(() => {
@@ -24,22 +24,7 @@ export default function AdminActivityMonitor() {
 
     const now = fallbackTimestamp;
     const events: ActivityRow[] = [];
-    const reviewJobs = jobs.filter((job) => job.status === "In review");
-    const recentJob = reviewJobs[0];
     const pendingEmployer = employers.find((employer) => employer.status === "Pending verification");
-    const publishedJob = jobs.find((job) => job.status === "Published");
-    const shortlistedApplicant = myApplicants.find((applicant) => applicant.status === "Shortlisted");
-
-    if (recentJob) {
-      const employer = employers.find((entry) => entry.id === recentJob.owner);
-      events.push({
-        id: `seed-job-${recentJob.id}`,
-        title: "Job posting submitted",
-        detail: `${employer?.name ?? "Employer"} · ${recentJob.title}`,
-        href: "/admin/jobs",
-        createdAt: new Date(now - 29 * 60_000).toISOString(),
-      });
-    }
     if (pendingEmployer) {
       events.push({
         id: `seed-employer-${pendingEmployer.id}`,
@@ -49,36 +34,8 @@ export default function AdminActivityMonitor() {
         createdAt: new Date(now - 65 * 60_000).toISOString(),
       });
     }
-    if (publishedJob) {
-      events.push({
-        id: `seed-published-${publishedJob.id}`,
-        title: "Job posting approved",
-        detail: publishedJob.title,
-        href: "/admin/jobs",
-        createdAt: new Date(now - 24 * 60 * 60_000 + 20 * 60_000).toISOString(),
-      });
-    } else if (reviewJobs[1]) {
-      const otherJob = reviewJobs[1];
-      const employer = employers.find((entry) => entry.id === otherJob.owner);
-      events.push({
-        id: `seed-job-${otherJob.id}`,
-        title: "Job posting submitted",
-        detail: `${employer?.name ?? "Employer"} · ${otherJob.title}`,
-        href: "/admin/jobs",
-        createdAt: new Date(now - 24 * 60 * 60_000 + 20 * 60_000).toISOString(),
-      });
-    }
-    if (shortlistedApplicant) {
-      events.push({
-        id: `seed-applicant-${shortlistedApplicant.id}`,
-        title: "Applicant shortlisted",
-        detail: shortlistedApplicant.name,
-        href: "/admin/applications",
-        createdAt: new Date(now - 24 * 60 * 60_000 + 65 * 60_000).toISOString(),
-      });
-    }
     return events;
-  }, [employers, fallbackTimestamp, jobs, myApplicants]);
+  }, [employers, fallbackTimestamp]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setFallbackTimestamp(Date.now()), 0);
@@ -100,7 +57,7 @@ export default function AdminActivityMonitor() {
           ))}
         </ol>
       ) : <p className="admin-empty-state">No activity has been recorded yet.</p>}
-      <p className="admin-activity-list-footnote">This list shows recent activity across the platform.</p>
+      <p className="admin-activity-list-footnote">This list shows recent employer account and access-request activity.</p>
     </section>
   );
 }

@@ -1,15 +1,29 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import BrandMark from "@/app/components/shared/brand-mark";
 import EmployerLogoutButton from "@/app/components/employer/employer-logout-button";
 import EmployerSidebar from "@/app/components/employer/employer-sidebar";
 import EmployerDashboardOverview from "@/app/components/employer/EmployerDashboardOverview";
 import EmployerDashboardHeaderTools from "@/app/components/employer/EmployerDashboardHeaderTools";
+import { BackendApiError } from "@/lib/backend-api";
+import { getEmployerCompanyProfile } from "@/lib/employer-api";
 import { getEmployerSession } from "@/lib/employer-session";
 
 export default async function EmployerDashboardPage() {
   const employer = await getEmployerSession();
   if (!employer) redirect("/employer/login");
+  let companyName = employer.companyName;
+  let profileError = "";
+  if (employer.accessToken) {
+    try {
+      const profile = await getEmployerCompanyProfile(employer.accessToken);
+      if (profile) companyName = profile.name;
+      else profileError = "No approved employer profile was found. Ask an administrator to review your employer request.";
+    } catch (error) {
+      console.error("Unable to load the employer company profile.", error);
+      profileError = error instanceof BackendApiError
+        ? error.message
+        : "The company profile could not be loaded.";
+    }
+  }
 
   return (
     <main className="employer-dashboard employer-dashboard-home">
@@ -17,10 +31,6 @@ export default async function EmployerDashboardPage() {
 
       <header className="employer-dashboard-header">
         <div className="workspace-brand-controls">
-          <Link className="employer-brand" href="/employer/dashboard">
-            <BrandMark />
-            <span>OnlineJobBoard</span>
-          </Link>
           <EmployerDashboardHeaderTools part="sidebar" />
         </div>
         <div className="employer-dashboard-user">
@@ -31,7 +41,8 @@ export default async function EmployerDashboardPage() {
       </header>
 
       <section className="employer-dashboard-main">
-        <EmployerDashboardOverview companyName={employer.companyName} />
+        {profileError && <p className="employer-module-placeholder" role="alert">{profileError}</p>}
+        <EmployerDashboardOverview companyName={companyName} />
       </section>
     </main>
   );

@@ -231,3 +231,7 @@ export function isDeadlineOpen(deadline: string): boolean {
   const endOfDeadline = new Date(`${deadline}T23:59:59`);
   return Number.isFinite(endOfDeadline.getTime()) && endOfDeadline > new Date();
 }
+
+export function formatVacancyId(id: string): string {
+  return id.replace(/-/g, "").slice(0, 5).toUpperCase();
+}

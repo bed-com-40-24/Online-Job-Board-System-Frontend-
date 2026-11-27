@@ -21,7 +21,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     ...(can(role, 'employer.verify')
       ? [
           { href: '/admin/verification', label: 'Employer verification' },
-          { href: '/admin/jobs', label: 'Job posting review' },
         ]
       : []),
   ];

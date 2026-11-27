@@ -12,7 +12,7 @@ const sectionDetails = {
   activity: {
     title: "Platform activity",
     eyebrow: "ADMINISTRATOR WORKSPACE",
-    description: "Review recent account, vacancy and moderation events.",
+    description: "Review recent employer account and access-request events.",
   },
   profile: {
     title: "My profile",
@@ -33,7 +33,7 @@ export default async function AdminSectionPage({
 
   return (
     <main className="admin-workspace">
-      <AdminSidebar currentSection={section} fullName={admin.fullName} />
+      <AdminSidebar backendMode={Boolean(admin.accessToken)} currentSection={section} fullName={admin.fullName} />
       <header className="admin-topbar">
         <div className="admin-topbar-brand-tools">
           <Link className="admin-topbar-brand" href="/admin/dashboard">
@@ -55,7 +55,17 @@ export default async function AdminSectionPage({
           </div>
         </div>
 
-        {section === "activity" ? <AdminActivityMonitor /> : <AdminProfileForm email={admin.email} fullName={admin.fullName} />}
+        {admin.accessToken ? (
+          <p className="admin-panel" role="status">
+            {section === "activity"
+              ? "Backend activity history is not available because the current API does not expose an activity endpoint."
+              : "Administrator profile editing is not available because the current API does not expose profile update endpoints."}
+          </p>
+        ) : (
+          section === "activity"
+            ? <AdminActivityMonitor />
+            : <AdminProfileForm email={admin.email} fullName={admin.fullName} />
+        )}
       </section>
     </main>
   );

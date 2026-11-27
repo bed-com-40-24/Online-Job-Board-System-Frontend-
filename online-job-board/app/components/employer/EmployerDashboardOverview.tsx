@@ -4,19 +4,18 @@ import Link from "next/link";
 import { BriefcaseBusiness, Building2, Plus, UsersRound } from "lucide-react";
 import { StatusBadge } from "@/app/components/shared/StatusBadge";
 import HistoryNavigation from "@/app/components/shared/HistoryNavigation";
-import { EMP_ID } from "@/lib/data";
+import { EMP_ID, formatVacancyId } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 const quickActions = [
-  { icon: Plus, title: "Create vacancy", description: "Start a job posting", href: "/employer/vacancies/new" },
   { icon: UsersRound, title: "Review applicants", description: "Manage candidates", href: "/employer/applications" },
   { icon: BriefcaseBusiness, title: "Manage vacancies", description: "Edit or close jobs", href: "/employer/vacancies" },
   { icon: Building2, title: "Company profile", description: "Update details", href: "/employer/profile" },
 ];
 
 export default function EmployerDashboardOverview({ companyName }: { companyName: string }) {
-  const { jobs, myApplicants } = useStore();
-  const vacancies = jobs.filter((job) => job.owner === EMP_ID);
+  const { jobs, myApplicants, backendMode } = useStore();
+  const vacancies = backendMode ? jobs : jobs.filter((job) => job.owner === EMP_ID);
   const metrics = [
     { label: "My vacancies", value: vacancies.length, detail: "Owned by your account" },
     { label: "Applicants", value: myApplicants.length, detail: "Across your vacancies" },
@@ -75,7 +74,7 @@ export default function EmployerDashboardOverview({ companyName }: { companyName
                 <tbody>
                   {vacancies.slice(0, 4).map((job) => (
                     <tr key={job.id}>
-                      <td><strong>{job.title}</strong><div className="muted small">{job.id}</div></td>
+                      <td><strong>{job.title}</strong><div className="muted small">#{formatVacancyId(job.id)}</div></td>
                       <td>{job.loc}</td>
                       <td>{myApplicants.filter((applicant) => applicant.jobId === job.id).length}</td>
                       <td><StatusBadge value={job.status} /></td>

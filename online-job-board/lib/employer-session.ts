@@ -9,6 +9,8 @@ export type EmployerSession = {
   id: string;
   email: string;
   companyName: string;
+  accessToken?: string;
+  expiresIn?: number;
 };
 
 function sessionKey() {
@@ -24,17 +26,22 @@ function sessionKey() {
 export async function createEmployerSession(employer: EmployerSession) {
   const secret = sessionKey();
   const cookieStore = await cookies();
+  const duration = Math.min(
+    Math.max(employer.expiresIn ?? sessionDurationSeconds, 1),
+    sessionDurationSeconds,
+  );
 
   const token = await new SignJWT({
     email: employer.email,
     companyName: employer.companyName,
+    accessToken: employer.accessToken,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer("online-job-board-employer")
     .setAudience("online-job-board-employer")
     .setSubject(employer.id)
     .setIssuedAt()
-    .setExpirationTime("8h")
+    .setExpirationTime(`${duration}s`)
     .sign(secret);
 
   cookieStore.set(cookieName, token, {
@@ -42,7 +49,7 @@ export async function createEmployerSession(employer: EmployerSession) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: sessionDurationSeconds,
+    maxAge: duration,
   });
 }
 
@@ -62,7 +69,8 @@ export async function getEmployerSession(): Promise<EmployerSession | null> {
     if (
       typeof payload.sub !== "string" ||
       typeof payload.email !== "string" ||
-      typeof payload.companyName !== "string"
+      typeof payload.companyName !== "string" ||
+      (payload.accessToken !== undefined && typeof payload.accessToken !== "string")
     ) {
       return null;
     }
@@ -71,6 +79,10 @@ export async function getEmployerSession(): Promise<EmployerSession | null> {
       id: payload.sub,
       email: payload.email,
       companyName: payload.companyName,
+      accessToken: payload.accessToken,
+      expiresIn: typeof payload.exp === "number"
+        ? Math.max(1, Math.floor(payload.exp - Date.now() / 1000))
+        : undefined,
     };
   } catch {
     return null;

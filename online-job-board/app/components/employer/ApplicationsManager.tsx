@@ -1,37 +1,47 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useMemo, useState, useTransition } from 'react';
 import Badge from '@/app/components/shared/Badge';
 import ReasonDialog from '@/app/components/shared/ReasonDialog';
 import HistoryNavigation from '@/app/components/shared/HistoryNavigation';
-import { APP_STATUSES, type AppStatus, type Applicant } from '@/lib/data';
+import { APP_STATUSES, formatVacancyId, type AppStatus, type Applicant } from '@/lib/data';
 import { useStore } from '@/lib/store';
+import { updateEmployerApplicationStatus } from '@/app/actions/employer-workspace';
+import { useRouter } from 'next/navigation';
 
 type NoticeMessage = { kind: 'success' | 'error'; text: string };
 
-export default function ApplicationsPage() {
-  const { myApplicants, setApplicantStatus, ready } = useStore();
+export default function ApplicationsPage({ jobId }: { jobId?: string }) {
+  const { myApplicants, setApplicantStatus, ready, backendMode } = useStore();
+  const router = useRouter();
   const [filter, setFilter] = useState<AppStatus | 'All'>('All');
   const [search, setSearch] = useState('');
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
   const [rejectionApplicant, setRejectionApplicant] = useState<Applicant | null>(null);
   const [notice, setNotice] = useState<NoticeMessage | null>(null);
+  const [isSaving, startTransition] = useTransition();
 
+  const scopedApplicants = useMemo(
+    () => jobId ? myApplicants.filter((applicant) => applicant.jobId === jobId) : myApplicants,
+    [jobId, myApplicants],
+  );
+  const scopedJobTitle = scopedApplicants[0]?.job;
   const counts = useMemo(
     () => ({
-      All: myApplicants.length,
-      New: myApplicants.filter((applicant) => applicant.status === 'New').length,
-      'In review': myApplicants.filter((applicant) => applicant.status === 'In review').length,
-      Pending: myApplicants.filter((applicant) => applicant.status === 'Pending').length,
-      Shortlisted: myApplicants.filter((applicant) => applicant.status === 'Shortlisted').length,
-      Accepted: myApplicants.filter((applicant) => applicant.status === 'Accepted').length,
-      Rejected: myApplicants.filter((applicant) => applicant.status === 'Rejected').length,
+      All: scopedApplicants.length,
+      New: scopedApplicants.filter((applicant) => applicant.status === 'New').length,
+      'In review': scopedApplicants.filter((applicant) => applicant.status === 'In review').length,
+      Pending: scopedApplicants.filter((applicant) => applicant.status === 'Pending').length,
+      Shortlisted: scopedApplicants.filter((applicant) => applicant.status === 'Shortlisted').length,
+      Accepted: scopedApplicants.filter((applicant) => applicant.status === 'Accepted').length,
+      Rejected: scopedApplicants.filter((applicant) => applicant.status === 'Rejected').length,
     }),
-    [myApplicants],
+    [scopedApplicants],
   );
   const visibleApplicants = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return myApplicants.filter((applicant) => {
+    return scopedApplicants.filter((applicant) => {
       const matchesStatus = filter === 'All' || applicant.status === filter;
       const matchesSearch =
         !query ||
@@ -40,14 +50,29 @@ export default function ApplicationsPage() {
         applicant.job.toLowerCase().includes(query);
       return matchesStatus && matchesSearch;
     });
-  }, [myApplicants, filter, search]);
+  }, [scopedApplicants, filter, search]);
 
   const changeStatus = (applicant: Applicant, status: AppStatus) => {
     if (status === applicant.status) return;
     setNotice(null);
 
-    if (status === 'Rejected') {
+    if (status === 'Rejected' && !backendMode) {
       setRejectionApplicant(applicant);
+      return;
+    }
+
+    if (backendMode) {
+      if (applicant.status !== 'New' || (status !== 'Shortlisted' && status !== 'Rejected')) return;
+      startTransition(async () => {
+        const formData = new FormData();
+        formData.set('applicationId', applicant.id);
+        formData.set('status', status === 'Shortlisted' ? 'SHORTLISTED' : 'REJECTED');
+        const result = await updateEmployerApplicationStatus({}, formData);
+        setNotice(result.success
+          ? { kind: 'success', text: `${applicant.name} was ${status.toLowerCase()}.` }
+          : { kind: 'error', text: result.error ?? 'The application status could not be updated.' });
+        if (result.success) router.refresh();
+      });
       return;
     }
 
@@ -65,31 +90,44 @@ export default function ApplicationsPage() {
 
   if (!ready) {
     return (
-      <div className="applications-page" aria-busy="true">
-        <h1>Loading applications...</h1>
-        <p className="muted">Please wait.</p>
+      <div className="employer-applications-page-content" aria-busy="true">
+        <div className="employer-page-heading">
+          <div>
+            <p className="employer-dashboard-kicker">EMPLOYER WORKSPACE</p>
+            <h1>Loading applications…</h1>
+            <p>Please wait while your applications are loaded.</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-      <div className="applications-page">
-        <header className="employer-page-heading applications-page-heading">
-          <HistoryNavigation fallbackHref="/employer/dashboard" />
-          <div>
-            <p className="employer-dashboard-kicker">Employer workspace</p>
-            <h1>Applications</h1>
-            <p className="employer-module-description">
-              Review candidates for your vacancies and manage their application status.
-            </p>
-            <p className="notice" role="note">
-              This workflow uses sample applicants. Status changes are not saved to Oracle.
-            </p>
+      <div className="employer-applications-page-content">
+        <header className="employer-vacancies-heading">
+          <div className="employer-page-heading">
+            <HistoryNavigation fallbackHref="/employer/dashboard" />
+            <div>
+              <p className="employer-dashboard-kicker">EMPLOYER WORKSPACE</p>
+              <h1>{jobId ? "Vacancy applicants" : "Applications"}</h1>
+              <p className="employer-module-description">
+                {jobId && scopedJobTitle
+                  ? `Review applicants for ${scopedJobTitle}.`
+                  : "Review candidates for your vacancies and manage their application status."}
+              </p>
+              {jobId && (
+                <div className="employer-applications-heading-links">
+                  <Link className="employer-vacancies-view" href="/employer/applications">
+                    View all applications
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
         {notice && (
-          <div className={`notice ${notice.kind}`} role="status">
+          <div className={`employer-applications-notice employer-applications-notice-${notice.kind}`} role="status">
             {notice.text}
             <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notice">
               ×
@@ -99,38 +137,38 @@ export default function ApplicationsPage() {
 
         <section
           aria-label="Filter applications by status"
-          className="stats applications-status-filters"
+          className="employer-applications-status-filters"
         >
           {(['All', ...APP_STATUSES] as const).map((status) => (
             <button
               aria-pressed={filter === status}
-              className={`card stat-card${filter === status ? ' selected' : ''}`}
+              className={`employer-applications-status-filter${filter === status ? ' selected' : ''}`}
               key={status}
               onClick={() => setFilter(status)}
               type="button"
             >
-              <span className="stat-label">{status}</span>
-              <span className="number">{counts[status]}</span>
-              <span className="small muted">applications</span>
+              <span>{status}</span>
+              <strong>{counts[status]}</strong>
+              <small>applications</small>
             </button>
           ))}
         </section>
 
         <section
           aria-labelledby="applications-list-heading"
-          className="panel applications-panel"
+          className="employer-vacancies-panel employer-applications-panel"
         >
-          <div className="applications-panel-heading">
+          <div className="employer-applications-panel-heading">
             <div>
               <h2 id="applications-list-heading">
                 {filter === 'All' ? 'All applications' : `${filter} applications`}
               </h2>
               <p aria-live="polite">
-                Showing {visibleApplicants.length} of {myApplicants.length} applications
+                Showing {visibleApplicants.length} of {scopedApplicants.length} applications
               </p>
             </div>
-            <label className="field">
-              <span>Search applicants</span>
+            <label className="employer-vacancies-search employer-applications-search">
+              <span className="sr-only">Search applicants</span>
               <input
                 type="search"
                 placeholder="Search name, email or vacancy..."
@@ -141,16 +179,16 @@ export default function ApplicationsPage() {
           </div>
           <div
             aria-label="Application records"
-            className="tablewrap applications-table-wrap"
+            className="employer-vacancies-table-wrap employer-applications-table-wrap"
             role="region"
             tabIndex={0}
           >
-            <table className="applications-table">
+            <table className="employer-vacancies-table employer-applications-table">
               <thead>
                 <tr>
                   <th scope="col">Applicant</th>
                   <th scope="col">Vacancy</th>
-                  <th scope="col">Date applied</th>
+                  <th scope="col">Applied</th>
                   <th scope="col">Status</th>
                   <th scope="col">Actions</th>
                 </tr>
@@ -160,8 +198,7 @@ export default function ApplicationsPage() {
                   <tr key={applicant.id}>
                     <td>
                       <strong>{applicant.name}</strong>
-                      <br />
-                      <span className="muted">{applicant.email}</span>
+                      <div className="employer-vacancies-subtext">{applicant.email}</div>
                     </td>
                     <td>{applicant.job}</td>
                     <td>{applicant.applied}</td>
@@ -178,34 +215,45 @@ export default function ApplicationsPage() {
                       <div className="application-actions">
                         <button
                           type="button"
-                          className="confirm-cancel"
+                          className="employer-vacancies-view employer-applications-action"
                           onClick={() => setSelectedApplicant(applicant)}
                         >
                           View details
                         </button>
-                        {applicant.status === 'Pending' && (
+                        {(applicant.status === 'Pending' || (backendMode && applicant.status === 'New')) && (
                           <button
+                            disabled={isSaving}
                             type="button"
-                            className="primary"
+                            className="employer-application-shortlist"
                             onClick={() => changeStatus(applicant, 'Shortlisted')}
                           >
                             Shortlist
                           </button>
                         )}
-                        {applicant.status === 'Shortlisted' && (
+                        {applicant.status === 'Shortlisted' && !backendMode && (
                           <button
                             type="button"
-                            className="primary"
+                            className="employer-application-shortlist"
                             onClick={() => changeStatus(applicant, 'Accepted')}
                           >
                             Accept
                           </button>
                         )}
-                        {applicant.status !== 'Rejected' && applicant.status !== 'Accepted' && (
+                        {!backendMode && applicant.status !== 'Rejected' && applicant.status !== 'Accepted' && (
                           <button
                             type="button"
-                            className="danger"
+                            className="employer-application-reject"
                             onClick={() => changeStatus(applicant, 'Rejected')}
+                          >
+                            Reject
+                          </button>
+                        )}
+                        {backendMode && applicant.status === 'New' && (
+                          <button
+                            className="employer-application-reject"
+                            disabled={isSaving}
+                            onClick={() => changeStatus(applicant, 'Rejected')}
+                            type="button"
                           >
                             Reject
                           </button>
@@ -216,13 +264,13 @@ export default function ApplicationsPage() {
                 ))}
                 {visibleApplicants.length === 0 && (
                   <tr>
-                    <td className="muted applications-empty-row" colSpan={5}>
+                    <td className="employer-vacancies-empty" colSpan={5}>
                       <div className="empty-state">
                         <h3>No applications found</h3>
                         <p>Try another search term or select a different status.</p>
                         <button
                           type="button"
-                          className="confirm-cancel"
+                          className="employer-vacancies-view"
                           onClick={() => {
                             setSearch('');
                             setFilter('All');
@@ -257,7 +305,7 @@ export default function ApplicationsPage() {
                 <p><strong>Name:</strong> {selectedApplicant.name}</p>
                 <p><strong>Email:</strong> {selectedApplicant.email}</p>
                 <p><strong>Vacancy:</strong> {selectedApplicant.job}</p>
-                <p><strong>Vacancy ID:</strong> {selectedApplicant.jobId}</p>
+                <p><strong>Vacancy ID:</strong> {formatVacancyId(selectedApplicant.jobId)}</p>
                 <p><strong>Date applied:</strong> {selectedApplicant.applied}</p>
                 <p>
                   <strong>Application status:</strong>{' '}

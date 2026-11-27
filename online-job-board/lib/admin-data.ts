@@ -18,7 +18,11 @@ type EmployerRow = {
 };
 
 export async function getRecentAdminEmployers(limit = 5): Promise<AdminEmployer[]> {
-  if ((process.env.AUTH_BACKEND ?? "demo") === "demo") {
+  const backend = process.env.AUTH_BACKEND ?? "demo";
+  if (backend === "api") {
+    throw new Error("Administrator employer data must be loaded from the recruitment API.");
+  }
+  if (backend === "demo") {
     return seedEmployers.slice(0, limit).map((employer) => ({
       id: employer.id,
       companyName: employer.name,
@@ -52,7 +56,11 @@ export async function getRecentAdminEmployers(limit = 5): Promise<AdminEmployer[
 }
 
 export async function getAdminEmployerCount(): Promise<number> {
-  if ((process.env.AUTH_BACKEND ?? "demo") === "demo") return seedEmployers.length;
+  const backend = process.env.AUTH_BACKEND ?? "demo";
+  if (backend === "api") {
+    throw new Error("Administrator employer counts are not exposed by the recruitment API.");
+  }
+  if (backend === "demo") return seedEmployers.length;
 
   let connection: oracledb.Connection | undefined;
 

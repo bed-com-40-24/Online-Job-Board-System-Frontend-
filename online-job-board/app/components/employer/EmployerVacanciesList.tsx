@@ -11,19 +11,19 @@ import { useStore } from "@/lib/store";
 const statuses: JobStatus[] = ["Published", "In review", "Draft", "Closed", "Rejected"];
 
 export default function EmployerVacanciesList() {
-  const { jobs, myApplicants } = useStore();
+  const { jobs, myApplicants, backendMode } = useStore();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
   const vacancies = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return jobs
-      .filter((job) => job.owner === EMP_ID)
+      .filter((job) => backendMode || job.owner === EMP_ID)
       .filter((job) => !status || job.status === status)
       .filter((job) =>
         !normalizedQuery ||
-        [job.title, job.id, job.dept, job.loc].some((value) => value?.toLowerCase().includes(normalizedQuery)),
+        [job.title, job.dept, job.loc].some((value) => value?.toLowerCase().includes(normalizedQuery)),
       );
-  }, [jobs, query, status]);
+  }, [backendMode, jobs, query, status]);
 
   return (
     <>
@@ -48,7 +48,7 @@ export default function EmployerVacanciesList() {
             <span className="sr-only">Search vacancies</span>
             <input
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by job title, vacancy ID, department or location"
+              placeholder="Search by job title, department or location"
               type="search"
               value={query}
             />
@@ -80,13 +80,20 @@ export default function EmployerVacanciesList() {
                 <tr key={job.id}>
                   <td>
                     <strong>{job.title}</strong>
-                    <div className="employer-vacancies-subtext">{job.id} | {job.dept || "Other"}</div>
+                    <div className="employer-vacancies-subtext">{job.dept || "Other"}</div>
                   </td>
                   <td>
                     {job.type || "Not specified"}
                     <div className="employer-vacancies-subtext">{job.loc}</div>
                   </td>
-                  <td>{myApplicants.filter((applicant) => applicant.jobId === job.id).length}</td>
+                  <td>
+                    <Link
+                      className="employer-vacancies-view"
+                      href={`/employer/applications?jobId=${encodeURIComponent(job.id)}`}
+                    >
+                      View applicants ({myApplicants.filter((applicant) => applicant.jobId === job.id).length})
+                    </Link>
+                  </td>
                   <td><StatusBadge value={job.status} /></td>
                   <td>
                     <Link className="employer-vacancies-view" href={`/employer/vacancies/${encodeURIComponent(job.id)}`}>

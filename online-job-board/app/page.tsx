@@ -18,6 +18,11 @@ const features = [
     title: "Verify employers",
     description: "Give administrators the tools to review accounts and postings.",
   },
+  {
+    icon: BriefcaseBusiness,
+    title: "Discover opportunities",
+    description: "Browse active vacancies and track submitted applications.",
+  },
 ];
 
 export default function HomePage() {
@@ -29,8 +34,9 @@ export default function HomePage() {
           <span>OnlineJobBoard</span>
         </Link>
         <nav className="public-header-actions" aria-label="Main navigation">
+          <Link className="public-sign-in" href="/jobs">Browse jobs</Link>
           <Link className="public-sign-in" href="/login">Sign in</Link>
-          <Link className="public-header-cta" href="/employer/register">Post a vacancy</Link>
+          <Link className="public-header-cta" href="/register">Create an account</Link>
         </nav>
       </header>
 
@@ -44,12 +50,13 @@ export default function HomePage() {
               applicants, with tools for administrators to keep the platform moving.
             </p>
             <div className="public-hero-actions">
-              <Link className="public-primary-action" href="/employer/register">
-                Get started as an employer <ArrowRight aria-hidden="true" size={17} />
+              <Link className="public-primary-action" href="/register">
+                Create a new account <ArrowRight aria-hidden="true" size={17} />
               </Link>
               <Link className="public-secondary-action" href="/login">Sign in</Link>
+              <Link className="public-secondary-action" href="/jobs">Browse jobs</Link>
             </div>
-            <p className="public-hero-note">Already registered? Sign in to continue to your workspace.</p>
+            <p className="public-hero-note">Already have an account? Sign in to continue.</p>
           </div>
 
           <aside className="public-preview" aria-label="Platform capabilities">

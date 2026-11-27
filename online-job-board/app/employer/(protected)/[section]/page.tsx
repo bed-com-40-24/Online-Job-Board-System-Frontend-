@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import BrandMark from "@/app/components/shared/brand-mark";
 import HistoryNavigation from "@/app/components/shared/HistoryNavigation";
 import EmployerLogoutButton from "@/app/components/employer/employer-logout-button";
 import EmployerSidebar from "@/app/components/employer/employer-sidebar";
 import EmployerDashboardHeaderTools from "@/app/components/employer/EmployerDashboardHeaderTools";
 import EmployerProfileForm from "@/app/components/employer/EmployerProfileForm";
+import { BackendApiError } from "@/lib/backend-api";
+import { getEmployerCompanyProfile, type EmployerCompanyProfile } from "@/lib/employer-api";
 import { getEmployerSession } from "@/lib/employer-session";
 import { seedEmployers } from "@/lib/data";
 
@@ -44,16 +44,24 @@ export default async function EmployerModulePage({
 
   const moduleInfo = modules[section];
   const employerDetails = seedEmployers.find((entry) => entry.id === employer.id || entry.email === employer.email);
+  let apiProfile: EmployerCompanyProfile | null = null;
+  let apiProfileError = "";
+  if (section === "profile" && employer.accessToken) {
+    try {
+      apiProfile = await getEmployerCompanyProfile(employer.accessToken);
+    } catch (error) {
+      console.error("Unable to load the employer company profile.", error);
+      apiProfileError = error instanceof BackendApiError
+        ? error.message
+        : "The company profile could not be loaded.";
+    }
+  }
 
   return (
     <main className="employer-dashboard employer-dashboard-home">
       <EmployerSidebar companyName={employer.companyName} currentSection={section} />
       <header className="employer-dashboard-header">
         <div className="workspace-brand-controls">
-          <Link className="employer-brand" href="/employer/dashboard">
-            <BrandMark />
-            <span>OnlineJobBoard</span>
-          </Link>
           <EmployerDashboardHeaderTools part="sidebar" />
         </div>
         <div className="employer-dashboard-user">
@@ -72,7 +80,25 @@ export default async function EmployerModulePage({
             <p className="employer-module-description">{moduleInfo.description}</p>
           </div>
         </div>
-        {section === "profile" ? (
+        {section === "profile" && employer.accessToken && apiProfileError ? (
+          <p className="employer-module-placeholder" role="alert">{apiProfileError}</p>
+        ) : section === "profile" && employer.accessToken && !apiProfile ? (
+          <p className="employer-module-placeholder" role="alert">
+            No approved employer profile was found. Ask an administrator to review your employer request.
+          </p>
+        ) : section === "profile" && employer.accessToken && apiProfile ? (
+          <EmployerProfileForm
+            address={apiProfile.location}
+            backendMode
+            companyName={apiProfile.name}
+            contactName=""
+            email={apiProfile.contactEmail}
+            industry=""
+            overview={apiProfile.description}
+            phone={apiProfile.contactPhone}
+            verification="Approved"
+          />
+        ) : section === "profile" ? (
           <EmployerProfileForm
             address={employerDetails?.address === "Lilongwe" ? "Lilongwe, Malawi" : employerDetails?.address ?? ""}
             companyName={employer.companyName}

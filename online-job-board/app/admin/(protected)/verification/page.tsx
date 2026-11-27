@@ -21,7 +21,7 @@ export default async function EmployerVerificationPage() {
 
   return (
     <main className="admin-workspace">
-      <AdminSidebar currentSection="verification" fullName={admin.fullName} />
+      <AdminSidebar backendMode={Boolean(admin.accessToken)} currentSection="verification" fullName={admin.fullName} />
       <header className="admin-topbar">
         <div className="admin-topbar-brand-tools">
           <Link className="admin-topbar-brand" href="/admin/dashboard"><BrandMark /><span>OnlineJobBoard</span></Link>
@@ -38,7 +38,12 @@ export default async function EmployerVerificationPage() {
             <p>The system checks business profile details automatically.</p>
           </div>
         </div>
-        <section aria-label="Automatic employer verification results" className="admin-panel">
+        {admin.accessToken ? (
+          <section aria-label="Employer verification documents" className="admin-panel">
+            <p>Business registration certificates are stored privately. Open an employer request to retrieve a time-limited document link, then approve or reject the request from employer management.</p>
+            <Link className="admin-panel-button" href="/admin/employers">Review employer requests</Link>
+          </section>
+        ) : <section aria-label="Automatic employer verification results" className="admin-panel">
           <p className="muted">Automatic screening checks that required details are present and formatted correctly. It does not query an external business registry.</p>
           <div className="admin-table-wrap" role="region" tabIndex={0}>
             <table className="admin-employer-table">
@@ -57,7 +62,7 @@ export default async function EmployerVerificationPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </section>}
       </section>
     </main>
   );

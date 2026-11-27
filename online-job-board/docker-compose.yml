@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        AUTH_BACKEND: api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      BACKEND_API_URL: https://api.online-job.mikhy.me
+    volumes:
+      - demo_auth_data:/app/.data
+    restart: unless-stopped
+
+volumes:
+  demo_auth_data:

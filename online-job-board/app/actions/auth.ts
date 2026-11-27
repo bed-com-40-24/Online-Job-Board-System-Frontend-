@@ -1,15 +1,21 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import oracledb from "oracledb";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { getOracleConnection } from "@/lib/oracle";
-import { createAdminSession, clearAdminSession } from "@/lib/admin-session";
+import { backendApiRequest, BackendApiError } from "@/lib/backend-api";
+import { createAdminSession, clearAdminSession, getAdminSession } from "@/lib/admin-session";
 import {
   createEmployerSession,
   clearEmployerSession,
   getEmployerSession,
 } from "@/lib/employer-session";
+import {
+  clearJobSeekerSession,
+  createJobSeekerSession,
+} from "@/lib/job-seeker-session";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import {
   clearDemoLoginFailures,
@@ -76,10 +82,10 @@ const resetAccountConfig = {
   },
 } as const;
 
-function getAuthBackend(): "demo" | "oracle" {
+function getAuthBackend(): "demo" | "oracle" | "api" {
   const backend = process.env.AUTH_BACKEND ?? "demo";
-  if (backend !== "demo" && backend !== "oracle") {
-    throw new Error("AUTH_BACKEND must be either 'demo' or 'oracle'.");
+  if (backend !== "demo" && backend !== "oracle" && backend !== "api") {
+    throw new Error("AUTH_BACKEND must be 'demo', 'oracle', or 'api'.");
   }
   return backend;
 }
@@ -111,6 +117,41 @@ function isUniqueConstraintError(error: unknown): boolean {
     "code" in error &&
     error.code === "ORA-00001"
   );
+}
+
+function getApiList<T>(response: unknown): T[] {
+  if (Array.isArray(response)) return response as T[];
+  if (typeof response === "object" && response !== null) {
+    const record = response as { content?: unknown; items?: unknown; data?: unknown };
+    if (Array.isArray(record.content)) return record.content as T[];
+    if (Array.isArray(record.items)) return record.items as T[];
+    if (Array.isArray(record.data)) return record.data as T[];
+  }
+  throw new Error("The backend returned an unexpected list response.");
+}
+
+type ApiCurrentUser = {
+  id: string;
+  email: string;
+  role: string;
+  status?: string;
+  accountStatus?: string;
+};
+
+async function getApiCurrentUser(token: string): Promise<ApiCurrentUser> {
+  try {
+    return await backendApiRequest<ApiCurrentUser>("/api/auth/me", {
+      token,
+      unauthorizedMessage: "The backend could not verify the sign-in session.",
+    });
+  } catch (error) {
+    if (!(error instanceof BackendApiError) || error.status !== 401) throw error;
+
+    return backendApiRequest<ApiCurrentUser>("/api/users/me", {
+      token,
+      unauthorizedMessage: "The backend rejected the sign-in token. Please try again or contact your system administrator.",
+    });
+  }
 }
 
 function getEmailHash(email: string): string {
@@ -186,6 +227,96 @@ async function clearFailedLogins(
   );
 }
 
+export async function loginAccount(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const email = getValue(formData, "email").toLowerCase();
+  const password = getPassword(formData);
+  if (!isValidEmail(email) || password.length === 0 || password.length > 72) {
+    return { error: "Enter a valid email address and password." };
+  }
+  if (getAuthBackend() !== "api") {
+    return { error: "Combined sign-in requires the connected account service." };
+  }
+
+  try {
+    const login = await backendApiRequest<{ accessToken: string; expiresIn: number }>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: { email, password },
+        unauthorizedMessage: "Email or password is incorrect.",
+      },
+    );
+    const user = await getApiCurrentUser(login.accessToken);
+    const role = user.role.trim().toUpperCase();
+    const status = (user.status ?? user.accountStatus ?? "").trim().toUpperCase();
+    if (status !== "ACTIVE") {
+      return {
+        error: role === "EMPLOYER"
+          ? "Employer access is not active yet. An administrator must approve your request."
+          : "This account is not active. Contact an administrator for assistance.",
+      };
+    }
+
+    await clearEmployerSession();
+    await clearAdminSession();
+    await clearJobSeekerSession();
+
+    if (role === "EMPLOYER") {
+      await createEmployerSession({
+        id: user.id,
+        email: user.email,
+        companyName: user.email,
+        accessToken: login.accessToken,
+        expiresIn: login.expiresIn,
+      });
+      return { redirectTo: "/employer/dashboard" };
+    }
+
+    if (role === "ADMIN") {
+      await createAdminSession({
+        id: user.id,
+        email: user.email,
+        fullName: user.email,
+        accessToken: login.accessToken,
+        expiresIn: login.expiresIn,
+      });
+      return { redirectTo: "/admin/dashboard" };
+    }
+
+    if (role === "JOB_SEEKER") {
+      let displayName = user.email;
+      try {
+        const profile = await backendApiRequest<{ displayName?: string }>("/api/profile", {
+          token: login.accessToken,
+        });
+        if (profile.displayName) displayName = profile.displayName;
+      } catch (error) {
+        if (!(error instanceof BackendApiError) || error.status !== 404) throw error;
+      }
+      await createJobSeekerSession({
+        id: user.id,
+        email: user.email,
+        displayName,
+        accessToken: login.accessToken,
+        expiresIn: login.expiresIn,
+      });
+      return { redirectTo: "/job-seeker/dashboard" };
+    }
+
+    return { error: "This account type cannot sign in to this application." };
+  } catch (error) {
+    console.error("Account sign-in failed.", error);
+    return {
+      error: error instanceof BackendApiError
+        ? error.message
+        : "Sign-in could not be completed. Please try again.",
+    };
+  }
+}
+
 export async function loginEmployer(
   _previousState: AuthFormState,
   formData: FormData,
@@ -194,6 +325,38 @@ export async function loginEmployer(
   const password = getPassword(formData);
   if (!isValidEmail(email) || password.length === 0 || password.length > 72) {
     return { error: "Enter a valid email address and password." };
+  }
+
+  if (getAuthBackend() === "api") {
+    try {
+      const login = await backendApiRequest<{ accessToken: string; expiresIn: number }>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: { email, password },
+          unauthorizedMessage: "Email or password is incorrect.",
+        },
+      );
+      const user = await getApiCurrentUser(login.accessToken);
+      if (user.role !== "EMPLOYER" || (user.status ?? user.accountStatus) !== "ACTIVE") {
+        return { error: "Your employer account is awaiting administrator approval." };
+      }
+      await createEmployerSession({
+        id: user.id,
+        email: user.email,
+        companyName: user.email,
+        accessToken: login.accessToken,
+        expiresIn: login.expiresIn,
+      });
+      return { redirectTo: "/employer/dashboard" };
+    } catch (error) {
+      console.error("Backend employer sign-in failed.", error);
+      return {
+        error: error instanceof BackendApiError
+          ? error.message
+          : "Employer sign-in is temporarily unavailable. Please try again.",
+      };
+    }
   }
 
   if (getAuthBackend() === "demo") {
@@ -287,6 +450,122 @@ export async function registerEmployer(
   const companyPhone = getValue(formData, "companyPhone");
   const representativeName = getValue(formData, "representativeName");
   const representativePosition = getValue(formData, "representativePosition");
+
+  if (getAuthBackend() === "api") {
+    const description = getValue(formData, "businessDescription");
+    const registrationNumber = getValue(formData, "registrationNumber");
+    const vatNumber = getValue(formData, "vatNumber");
+    if (companyName.length < 2 || companyName.length > 200) {
+      return { error: "Company name must be between 2 and 200 characters." };
+    }
+    if (!isValidEmail(email)) return { error: "Enter a valid email address." };
+    if (email.length > 254) return { error: "Email address must be 254 characters or fewer." };
+    if (!isStrongEmployerPassword(password)) {
+      return { error: "Use at least 12 characters, including uppercase and lowercase letters, a number, and a symbol." };
+    }
+    if (password !== confirmPassword) return { error: "The passwords do not match." };
+    if (description.length < 2 || description.length > 10000) {
+      return { error: "Enter a company description between 2 and 10000 characters." };
+    }
+    if (physicalBusinessAddress.length < 2 || physicalBusinessAddress.length > 255) {
+      return { error: "Enter a business location between 2 and 255 characters." };
+    }
+    if (!/^\+?[0-9][0-9\s()-]{6,28}$/.test(companyPhone)) {
+      return { error: "Enter a valid company phone number." };
+    }
+    if (!registrationNumber || registrationNumber.length > 80 || registrationNumber.toUpperCase() === "LEGACY") {
+      return { error: "Enter a valid business registration number." };
+    }
+    if (!vatNumber || vatNumber.length > 80 || vatNumber.toUpperCase() === "LEGACY") {
+      return { error: "Enter a valid VAT or tax number." };
+    }
+    if (!(certificateEntry instanceof File) || certificateEntry.size === 0) {
+      return { error: "Upload your business registration certificate." };
+    }
+    if (certificateEntry.size > 5 * 1024 * 1024) {
+      return { error: "The certificate file must be 5 MB or smaller." };
+    }
+    let pdfSignature: Buffer;
+    try {
+      pdfSignature = Buffer.from(await certificateEntry.slice(0, 5).arrayBuffer());
+    } catch (error) {
+      console.error("Unable to read employer business certificate upload.", error);
+      return { error: "The certificate file could not be read. Please choose it again." };
+    }
+    if (pdfSignature.toString("ascii") !== "%PDF-") {
+      return { error: "Upload a valid PDF business registration certificate." };
+    }
+    let accountAlreadyExisted = false;
+    try {
+      try {
+        await backendApiRequest("/api/auth/register", {
+          method: "POST",
+          body: { email, password },
+        });
+      } catch (error) {
+        if (!(error instanceof BackendApiError) || error.status !== 409) throw error;
+        accountAlreadyExisted = true;
+      }
+      const login = await backendApiRequest<{ accessToken: string }>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: { email, password },
+          unauthorizedMessage: "Email or password is incorrect.",
+        },
+      );
+      const requestResponse = await backendApiRequest<unknown>(
+        "/api/employer-requests",
+        { token: login.accessToken },
+      );
+      const existingRequests = getApiList<{ status: string }>(requestResponse);
+      if (existingRequests.some((request) =>
+        ["PENDING", "APPROVED"].includes(request.status.toUpperCase()))) {
+        return {
+          success: "An employer access request for this account has already been submitted.",
+        };
+      }
+      if (existingRequests.some((request) => request.status.toUpperCase() === "REJECTED")) {
+        return {
+          error: "Your previous employer request was rejected. Contact an administrator before submitting another request.",
+        };
+      }
+      const requestForm = new FormData();
+      requestForm.set(
+        "application",
+        new Blob([JSON.stringify({
+          companyName,
+          businessDescription: description,
+          contactEmail: email,
+          contactPhone: companyPhone,
+          location: physicalBusinessAddress,
+          registrationNumber,
+          vatNumber,
+        })], { type: "application/json" }),
+      );
+      requestForm.set("document", certificateEntry, certificateEntry.name);
+      await backendApiRequest("/api/employer-requests", {
+        method: "POST",
+        token: login.accessToken,
+        body: requestForm,
+      });
+      return {
+        success: "Your employer request was submitted. An administrator must approve it before you can sign in to the employer workspace.",
+      };
+    } catch (error) {
+      console.error("Backend employer registration failed.", error);
+      if (accountAlreadyExisted && error instanceof BackendApiError && error.status === 401) {
+        return {
+          error: "An account with this email already exists, but the password did not match. Your employer request was not submitted. Use the password originally set for this account, then retry.",
+        };
+      }
+      return {
+        error: error instanceof BackendApiError
+          ? error.message
+          : "Employer registration is temporarily unavailable. Please try again.",
+      };
+    }
+  }
 
   if (companyName.length < 2 || companyName.length > 200) {
     return { error: "Company name must be between 2 and 200 characters." };
@@ -433,6 +712,80 @@ export async function updateEmployerCompanyName(
   if (companyName.length < 2 || companyName.length > 200) {
     return { error: "Company name must be between 2 and 200 characters." };
   }
+  if (getAuthBackend() === "api") {
+    const contactEmail = getValue(formData, "email").toLowerCase();
+    const contactPhone = getValue(formData, "phone");
+    const location = getValue(formData, "address");
+    const description = getValue(formData, "overview");
+    if (!isValidEmail(contactEmail)) return { error: "Enter a valid work email address." };
+    if (!/^\+?[0-9][0-9\s()-]{6,28}$/.test(contactPhone)) {
+      return { error: "Enter a valid company phone number." };
+    }
+    if (!location || location.length > 500) return { error: "Enter a business location up to 500 characters." };
+    if (description.length < 2 || description.length > 2000) {
+      return { error: "Enter a company description between 2 and 2000 characters." };
+    }
+    if (!employer.accessToken) return { error: "Sign in again before updating your company profile." };
+
+    try {
+      const companies = getApiList<{ id: string }>(
+        await backendApiRequest<unknown>("/api/companies", { token: employer.accessToken }),
+      );
+      let company = companies[0];
+      if (!company) {
+        const requests = getApiList<{
+          companyName: string;
+          businessDescription: string;
+          contactEmail: string;
+          contactPhone: string;
+          location: string;
+          status: string;
+        }>(
+          await backendApiRequest<unknown>("/api/employer-requests", { token: employer.accessToken }),
+        );
+        const approvedRequest = requests.find((request) => request.status.toUpperCase() === "APPROVED");
+        if (!approvedRequest) {
+          return { error: "An approved employer request is required before creating a company profile." };
+        }
+        company = await backendApiRequest<{ id: string }>("/api/companies", {
+          method: "POST",
+          token: employer.accessToken,
+          body: {
+            name: approvedRequest.companyName,
+            description: approvedRequest.businessDescription,
+            contactEmail: approvedRequest.contactEmail,
+            contactPhone: approvedRequest.contactPhone,
+            location: approvedRequest.location,
+          },
+        });
+      }
+      if (!company.id) throw new Error("The backend did not return a company ID.");
+
+      await backendApiRequest(`/api/companies/${encodeURIComponent(company.id)}`, {
+        method: "PUT",
+        token: employer.accessToken,
+        body: { name: companyName, description, contactEmail, contactPhone, location },
+      });
+    } catch (error) {
+      console.error("Backend company profile update failed.", error);
+      return {
+        error: error instanceof BackendApiError
+          ? error.message
+          : "The company profile could not be updated. Please try again.",
+      };
+    }
+    try {
+      await createEmployerSession({ ...employer, companyName });
+    } catch (error) {
+      console.error("Company profile updated but employer session refresh failed.", error);
+      return {
+        error: "The profile was saved, but your session could not refresh. Sign out and sign in again.",
+      };
+    }
+    revalidatePath("/employer/dashboard");
+    revalidatePath("/employer/profile");
+    return { success: "Company profile updated." };
+  }
 
   if (getAuthBackend() === "demo") {
     try {
@@ -488,6 +841,38 @@ export async function loginAdmin(
   const password = getPassword(formData);
   if (!isValidEmail(email) || password.length === 0 || password.length > 72) {
     return { error: "Enter a valid email address and password." };
+  }
+
+  if (getAuthBackend() === "api") {
+    try {
+      const login = await backendApiRequest<{ accessToken: string; expiresIn: number }>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: { email, password },
+          unauthorizedMessage: "Email or password is incorrect.",
+        },
+      );
+      const user = await getApiCurrentUser(login.accessToken);
+      if (user.role !== "ADMIN" || (user.status ?? user.accountStatus) !== "ACTIVE") {
+        return { error: "This account is not an active administrator account." };
+      }
+      await createAdminSession({
+        id: user.id,
+        email: user.email,
+        fullName: user.email,
+        accessToken: login.accessToken,
+        expiresIn: login.expiresIn,
+      });
+      return { redirectTo: "/admin/dashboard" };
+    } catch (error) {
+      console.error("Backend administrator sign-in failed.", error);
+      return {
+        error: error instanceof BackendApiError
+          ? error.message
+          : "Administrator sign-in is temporarily unavailable. Please try again.",
+      };
+    }
   }
 
   if (getAuthBackend() === "demo") {
@@ -578,12 +963,18 @@ export async function registerAdmin(
   const setupKey = getValue(formData, "setupKey");
   const expectedSetupKey = process.env.ADMIN_SIGNUP_KEY;
 
+  if (getAuthBackend() === "api") {
+    return { error: "Administrator accounts are provisioned by the backend team." };
+  }
   if (fullName.length < 2 || fullName.length > 100) {
     return { error: "Full name must be between 2 and 100 characters." };
   }
   if (!isValidEmail(email)) return { error: "Enter a valid email address." };
   if (password.length < 12 || password.length > 72) {
     return { error: "Password must be between 12 and 72 characters." };
+  }
+  if (getAuthBackend() === "api") {
+    return { error: "Administrator accounts are provisioned by the backend team." };
   }
   const submittedSetupKey = Buffer.from(setupKey);
   const configuredSetupKey = Buffer.from(expectedSetupKey ?? "");
@@ -643,6 +1034,25 @@ async function requestPasswordReset(
   if (!isValidEmail(email)) return { error: "Enter a valid email address." };
 
   const config = resetAccountConfig[accountType];
+  if (getAuthBackend() === "api") {
+    try {
+      await backendApiRequest("/api/auth/forgot-password", {
+        method: "POST",
+        body: { email },
+      });
+      return {
+        success: "If an account matches that email and email delivery is configured, reset instructions will be sent.",
+      };
+    } catch (error) {
+      console.error(`Backend ${accountType} password reset request failed.`, error);
+      return {
+        error: error instanceof BackendApiError
+          ? error.message
+          : "Password reset is temporarily unavailable. Please try again.",
+      };
+    }
+  }
+
   if (getAuthBackend() === "demo") {
     try {
       const demoType = accountType === "admin" ? "admin" : "employer";
@@ -737,6 +1147,26 @@ async function resetPassword(
   }
 
   const config = resetAccountConfig[accountType];
+  if (getAuthBackend() === "api") {
+    try {
+      await backendApiRequest("/api/auth/reset-password", {
+        method: "POST",
+        body: { resetToken: token, newPassword: password },
+      });
+      return {
+        success: "Your password has been updated. Sign in with your new password.",
+        redirectTo: accountType === "admin" ? "/admin/login" : "/employer/login",
+      };
+    } catch (error) {
+      console.error(`Backend ${accountType} password reset failed.`, error);
+      return {
+        error: error instanceof BackendApiError
+          ? error.message
+          : "Password reset is temporarily unavailable. Please request a new link.",
+      };
+    }
+  }
+
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const passwordHash = await bcrypt.hash(password, 12);
   if (getAuthBackend() === "demo") {
@@ -836,9 +1266,31 @@ export async function resetAdminPassword(
 }
 
 export async function logoutEmployer() {
+  const session = await getEmployerSession();
+  if (session?.accessToken && getAuthBackend() === "api") {
+    try {
+      await backendApiRequest("/api/auth/logout", {
+        method: "POST",
+        token: session.accessToken,
+      });
+    } catch (error) {
+      console.error("Backend employer sign-out failed.", error);
+    }
+  }
   await clearEmployerSession();
 }
 
 export async function logoutAdmin() {
+  const session = await getAdminSession();
+  if (session?.accessToken && getAuthBackend() === "api") {
+    try {
+      await backendApiRequest("/api/auth/logout", {
+        method: "POST",
+        token: session.accessToken,
+      });
+    } catch (error) {
+      console.error("Backend administrator sign-out failed.", error);
+    }
+  }
   await clearAdminSession();
 }

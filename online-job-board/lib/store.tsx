@@ -22,6 +22,7 @@ import { can } from './permissions';
 type StoreContextValue = {
   role: Role | null;
   ready: boolean;
+  backendMode: boolean;
   login: (role: Role) => void;
   logout: () => void;
   employers: Employer[];
@@ -37,7 +38,7 @@ type StoreContextValue = {
     note?: string,
     checklistComplete?: boolean,
   ) => boolean;
-  createEmployerJob: (job: Omit<Job, 'id' | 'owner' | 'status'>, status: 'Draft' | 'In review') => boolean;
+  createEmployerJob: (job: Omit<Job, 'id' | 'owner' | 'status'>, status: 'Draft' | 'In review') => string | null;
   updateEmployerJob: (id: string, job: Omit<Job, 'id' | 'owner' | 'status'>) => boolean;
   setEmployerJobStatus: (id: string, status: 'In review' | 'Closed') => boolean;
   deleteEmployerJob: (id: string) => boolean;
@@ -74,20 +75,28 @@ function validRejection(category: keyof typeof REASONS, reason?: string, note?: 
 export function StoreProvider({
   children,
   initialRole = null,
+  initialJobs,
+  initialApplicants,
+  backendMode = false,
 }: {
   children: ReactNode;
   initialRole?: Role | null;
+  initialJobs?: Job[];
+  initialApplicants?: Applicant[];
+  backendMode?: boolean;
 }) {
   const [role, setRole] = useState<Role | null>(() => initialRole);
   const [ready, setReady] = useState(() => initialRole !== null);
-  const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants);
-  const [employers, setEmployers] = useState<Employer[]>(() => seedEmployers.map((employer) => ({
+  const [applicants, setApplicants] = useState<Applicant[]>(
+    initialApplicants ?? (backendMode ? [] : seedApplicants),
+  );
+  const [employers, setEmployers] = useState<Employer[]>(() => (backendMode ? [] : seedEmployers).map((employer) => ({
     ...employer,
     status: employer.status === 'Rejected'
       ? 'Rejected'
       : getEmployerVerificationStatus(employer),
   })));
-  const [jobs, setJobs] = useState<Job[]>(seedJobs);
+  const [jobs, setJobs] = useState<Job[]>(initialJobs ?? (backendMode ? [] : seedJobs));
   const [adminActivity, setAdminActivity] = useState<AdminActivity[]>([]);
 
   const recordAdminActivity = (title: string, detail: string, href: string) => {
@@ -119,9 +128,10 @@ export function StoreProvider({
   };
 
   const myApplicants = useMemo(() => {
+    if (backendMode) return applicants;
     const ownedJobIds = new Set(jobs.filter((job) => job.owner === EMP_ID).map((job) => job.id));
     return applicants.filter((applicant) => ownedJobIds.has(applicant.jobId));
-  }, [applicants, jobs]);
+  }, [applicants, backendMode, jobs]);
 
   const setApplicantStatus: StoreContextValue['setApplicantStatus'] = (id, status, reason, note) => {
     if (!can(role, status === 'Rejected' ? 'applicant.reject' : 'applicant.update')) return false;
@@ -208,13 +218,13 @@ export function StoreProvider({
     recordAdminActivity(
       status === 'Published' ? 'Vacancy published' : 'Vacancy rejected',
       `${job.title} (${job.id}) was ${status === 'Published' ? 'published' : 'rejected'}.`,
-      '/admin/jobs',
+      '/admin/activity',
     );
     return true;
   };
 
   const createEmployerJob: StoreContextValue['createEmployerJob'] = (job, status) => {
-    if (role !== 'employer') return false;
+    if (role !== 'employer') return null;
     const highestId = jobs.reduce((highest, entry) => {
       const match = /^JB-(\d+)$/.exec(entry.id);
       return match ? Math.max(highest, Number(match[1])) : highest;
@@ -226,7 +236,7 @@ export function StoreProvider({
       status,
     };
     setJobs((current) => [newJob, ...current]);
-    return true;
+    return newJob.id;
   };
 
   const updateEmployerJob: StoreContextValue['updateEmployerJob'] = (id, job) => {
@@ -261,6 +271,7 @@ export function StoreProvider({
       value={{
         role,
         ready,
+        backendMode,
         login,
         logout,
         employers,

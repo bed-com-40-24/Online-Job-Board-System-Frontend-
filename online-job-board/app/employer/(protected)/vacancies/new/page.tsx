@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import BrandMark from "@/app/components/shared/brand-mark";
 import HistoryNavigation from "@/app/components/shared/HistoryNavigation";
 import EmployerLogoutButton from "@/app/components/employer/employer-logout-button";
 import EmployerSidebar from "@/app/components/employer/employer-sidebar";
@@ -20,14 +18,10 @@ export default async function NewVacancyPage({
 
   return (
     <main className="employer-dashboard employer-dashboard-home">
-      <EmployerSidebar companyName={employer.companyName} currentSection="create" />
+      <EmployerSidebar companyName={employer.companyName} currentSection="vacancies" />
 
       <header className="employer-dashboard-header">
         <div className="workspace-brand-controls">
-          <Link className="employer-brand" href="/employer/dashboard">
-            <BrandMark />
-            <span>OnlineJobBoard</span>
-          </Link>
           <EmployerDashboardHeaderTools part="sidebar" />
         </div>
         <div className="employer-dashboard-user">
@@ -43,7 +37,9 @@ export default async function NewVacancyPage({
           <div>
             <p className="employer-dashboard-kicker">EMPLOYER WORKSPACE</p>
             <h1>{id ? "Edit vacancy" : "Create a vacancy"}</h1>
-            <p className="employer-module-description">Enter the details for a draft or submit for administrator review.</p>
+            <p className="employer-module-description">
+              {id ? "Update the vacancy details below." : "Enter the vacancy details below."}
+            </p>
           </div>
         </div>
         <CreateVacancyForm jobId={id} />

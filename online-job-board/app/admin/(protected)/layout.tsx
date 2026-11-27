@@ -7,6 +7,11 @@ export default async function ProtectedAdminLayout({
 }: LayoutProps<"/admin">) {
   const admin = await getAdminSession();
   if (!admin) redirect("/admin/login");
+  if (process.env.AUTH_BACKEND === "api" && !admin.accessToken) redirect("/admin/login");
 
-  return <StoreProvider initialRole="admin">{children}</StoreProvider>;
+  return (
+    <StoreProvider initialRole="admin" backendMode={Boolean(admin.accessToken)}>
+      {children}
+    </StoreProvider>
+  );
 }

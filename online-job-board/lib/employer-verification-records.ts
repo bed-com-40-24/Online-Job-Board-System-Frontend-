@@ -23,7 +23,11 @@ type EmployerVerificationRow = {
 };
 
 export async function getEmployerVerificationRecords(): Promise<EmployerVerificationRecord[]> {
-  if ((process.env.AUTH_BACKEND ?? "demo") === "demo") {
+  const backend = process.env.AUTH_BACKEND ?? "demo";
+  if (backend === "api") {
+    throw new Error("Employer verification records must be loaded from the recruitment API.");
+  }
+  if (backend === "demo") {
     return seedEmployers.map((employer) => ({
       id: employer.id,
       companyName: employer.name,

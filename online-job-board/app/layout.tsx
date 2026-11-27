@@ -3,7 +3,7 @@ import '../styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'Online Job Board',
-  description: 'Manage job applications, employer verification, and job posting reviews.',
+  description: 'Find jobs, manage applications, and connect employers with qualified candidates.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

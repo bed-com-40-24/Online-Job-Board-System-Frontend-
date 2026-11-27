@@ -10,12 +10,12 @@ type DashboardNotification = { id: string; title: string; detail: string; action
 
 export default function EmployerDashboardHeaderTools({ part }: { part: "sidebar" | "notifications" }) {
   const router = useRouter();
-  const { employers, jobs, myApplicants } = useStore();
+  const { employers, jobs, myApplicants, backendMode } = useStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [seen, setSeen] = useState<string[]>([]);
-  const employerJobs = jobs.filter((job) => job.owner === EMP_ID);
-  const employerProfile = employers.find((employer) => employer.id === EMP_ID);
+  const employerJobs = backendMode ? jobs : jobs.filter((job) => job.owner === EMP_ID);
+  const employerProfile = backendMode ? undefined : employers.find((employer) => employer.id === EMP_ID);
   const verificationNotification: DashboardNotification[] = employerProfile
     ? [{
         id: `employer-verification:${employerProfile.id}:${employerProfile.status}`,

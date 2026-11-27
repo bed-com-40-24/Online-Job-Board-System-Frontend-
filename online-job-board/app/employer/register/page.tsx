@@ -1,5 +1,5 @@
-import EmployerAuthForm from "@/app/components/employer/employer-auth-form";
+import { redirect } from "next/navigation";
 
 export default function EmployerRegisterPage() {
-  return <EmployerAuthForm mode="register" />;
+  redirect("/register");
 }

@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import BrandMark from "@/app/components/shared/brand-mark";
 import EmployerDashboardHeaderTools from "@/app/components/employer/EmployerDashboardHeaderTools";
 import EmployerLogoutButton from "@/app/components/employer/employer-logout-button";
 import EmployerSidebar from "@/app/components/employer/employer-sidebar";
@@ -17,10 +15,6 @@ export default async function EmployerVacanciesPage() {
 
       <header className="employer-dashboard-header">
         <div className="workspace-brand-controls">
-          <Link className="employer-brand" href="/employer/dashboard">
-            <BrandMark />
-            <span>OnlineJobBoard</span>
-          </Link>
           <EmployerDashboardHeaderTools part="sidebar" />
         </div>
         <div className="employer-dashboard-user">

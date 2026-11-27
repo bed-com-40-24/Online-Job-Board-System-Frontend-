@@ -21,17 +21,11 @@ export function AdminDashboardMenuButton() {
 }
 
 export default function AdminDashboardHeaderTools({ fullName }: { fullName: string }) {
-  const { employers, jobs } = useStore();
+  const { employers } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const [seen, setSeen] = useState<string[]>([]);
 
   const notifications = [
-    ...jobs.filter((job) => job.status === "In review").map((job) => ({
-      id: `job:${job.id}`,
-      title: "Job awaiting review",
-      detail: `${job.title} (${job.id}) is in the moderation queue.`,
-      href: "/admin/jobs",
-    })),
     ...employers.filter((employer) => employer.status === "Pending verification").map((employer) => ({
       id: `employer:${employer.id}`,
       title: "Employer verification pending",

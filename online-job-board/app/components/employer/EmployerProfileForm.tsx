@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState, useState, type ChangeEvent } from "react";
+import { UploadCloud } from "lucide-react";
 import { updateEmployerCompanyName, type AuthFormState } from "@/app/actions/auth";
 import { initials } from "@/app/components/shared/IdentityIcons";
 import { StatusBadge } from "@/app/components/shared/StatusBadge";
 
 type EmployerProfileFormProps = {
   address: string;
+  backendMode?: boolean;
   companyName: string;
   contactName: string;
   email: string;
@@ -18,6 +20,7 @@ type EmployerProfileFormProps = {
 
 export default function EmployerProfileForm({
   address,
+  backendMode = false,
   companyName,
   contactName,
   email,
@@ -32,23 +35,31 @@ export default function EmployerProfileForm({
   );
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoError, setPhotoError] = useState("");
+  const [photoName, setPhotoName] = useState("");
 
   function choosePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setPhotoError("Choose an image file such as JPG or PNG.");
+      setPhotoName("");
       event.target.value = "";
       return;
     }
     if (file.size > 3 * 1024 * 1024) {
       setPhotoError("Choose an image smaller than 3 MB.");
+      setPhotoName("");
       event.target.value = "";
       return;
     }
     setPhotoError("");
+    setPhotoName(file.name);
     const reader = new FileReader();
     reader.onload = () => setPhotoPreview(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => {
+      setPhotoError("This image could not be previewed. Choose a different image.");
+      setPhotoName("");
+    };
     reader.readAsDataURL(file);
   }
 
@@ -62,9 +73,22 @@ export default function EmployerProfileForm({
         <p className="employer-profile-email">{email}</p>
         <StatusBadge value={verification} />
         <div className="employer-profile-photo">
-          <label htmlFor="organisation-profile-photo">Add organisation / profile photo</label>
-          <input accept="image/*" id="organisation-profile-photo" onChange={choosePhoto} type="file" />
-          <p>Choose a profile image (JPG, PNG or similar). The image will appear here so you can check it before leaving this page.</p>
+          <p className="employer-profile-photo-title">Profile image</p>
+          <input
+            accept="image/*"
+            aria-describedby="organisation-profile-photo-help"
+            className="employer-profile-photo-input"
+            id="organisation-profile-photo"
+            onChange={choosePhoto}
+            type="file"
+          />
+          <label className="employer-profile-photo-choice" htmlFor="organisation-profile-photo">
+            <UploadCloud aria-hidden="true" size={18} />
+            <span>Choose profile</span>
+          </label>
+          <p className="employer-profile-photo-help" id="organisation-profile-photo-help">
+            {photoName || "JPG, PNG or WebP image up to 3 MB. Selected image previews above."}
+          </p>
           {photoError && <p className="employer-profile-photo-error" role="alert">{photoError}</p>}
         </div>
       </aside>
@@ -77,33 +101,39 @@ export default function EmployerProfileForm({
               <span>Organisation name *</span>
               <input defaultValue={companyName} id="profile-company-name" maxLength={200} minLength={2} name="companyName" required />
             </label>
-            <label className="employer-profile-field" htmlFor="profile-contact-name">
-              <span>Contact person&apos;s name *</span>
-              <input defaultValue={contactName} id="profile-contact-name" name="contactName" required />
-            </label>
+            {!backendMode && (
+              <label className="employer-profile-field" htmlFor="profile-contact-name">
+                <span>Contact person&apos;s name *</span>
+                <input defaultValue={contactName} id="profile-contact-name" name="contactName" required />
+              </label>
+            )}
             <label className="employer-profile-field" htmlFor="profile-work-email">
               <span>Work email *</span>
               <input defaultValue={email} id="profile-work-email" name="email" required type="email" />
             </label>
             <label className="employer-profile-field" htmlFor="profile-phone">
               <span>Phone</span>
-              <input defaultValue={phone} id="profile-phone" name="phone" type="tel" />
+              <input defaultValue={phone} id="profile-phone" name="phone" required={backendMode} type="tel" />
             </label>
-            <label className="employer-profile-field" htmlFor="profile-industry">
-              <span>Industry</span>
-              <input defaultValue={industry} id="profile-industry" name="industry" />
-            </label>
-            <label className="employer-profile-field" htmlFor="profile-website">
-              <span>Website</span>
-              <input id="profile-website" name="website" type="url" />
-            </label>
+            {!backendMode && (
+              <>
+                <label className="employer-profile-field" htmlFor="profile-industry">
+                  <span>Industry</span>
+                  <input defaultValue={industry} id="profile-industry" name="industry" />
+                </label>
+                <label className="employer-profile-field" htmlFor="profile-website">
+                  <span>Website</span>
+                  <input id="profile-website" name="website" type="url" />
+                </label>
+              </>
+            )}
             <label className="employer-profile-field employer-profile-field-wide" htmlFor="profile-address">
-              <span>Business address</span>
-              <input defaultValue={address} id="profile-address" name="address" />
+              <span>Business address{backendMode ? " *" : ""}</span>
+              <input defaultValue={address} id="profile-address" name="address" required={backendMode} />
             </label>
             <label className="employer-profile-field employer-profile-field-wide" htmlFor="profile-overview">
-              <span>Company overview</span>
-              <textarea defaultValue={overview} id="profile-overview" name="overview" />
+              <span>Company overview{backendMode ? " *" : ""}</span>
+              <textarea defaultValue={overview} id="profile-overview" maxLength={2000} name="overview" required={backendMode} />
             </label>
           </div>
           {state.error && <p className="employer-profile-error" role="alert">{state.error}</p>}

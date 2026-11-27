@@ -8,11 +8,13 @@ export default function Badge({ status }: BadgeProps) {
   const tone =
     status === 'Accepted' || status === 'Verified' || status === 'Published'
       ? 'good'
-      : status === 'Rejected'
-        ? 'bad'
-        : status === 'New' || status === 'Pending' || status === 'Pending verification' || status === 'In review'
-          ? 'warn'
-          : '';
+      : status === 'Shortlisted'
+        ? 'info'
+        : status === 'Rejected'
+          ? 'bad'
+          : status === 'New' || status === 'Pending' || status === 'Pending verification' || status === 'In review'
+            ? 'warn'
+            : '';
 
   return <span className={`badge${tone ? ` ${tone}` : ''}`}>{status}</span>;
 }

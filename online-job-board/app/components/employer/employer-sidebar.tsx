@@ -1,9 +1,9 @@
 import Link from "next/link";
+import BrandMark from "@/app/components/shared/brand-mark";
 
 const navigation = [
   { href: "/employer/dashboard", icon: "▦", label: "Dashboard", section: "dashboard" },
   { href: "/employer/vacancies", icon: "▤", label: "My vacancies", section: "vacancies" },
-  { href: "/employer/vacancies/new", icon: "＋", label: "Create vacancy", section: "create" },
   { href: "/employer/applications", icon: "☷", label: "Applications", section: "applications" },
   { href: "/employer/profile", icon: "◉", label: "My profile", section: "profile" },
 ] as const;
@@ -25,6 +25,10 @@ function initials(companyName: string) {
 export default function EmployerSidebar({ companyName, currentSection }: EmployerSidebarProps) {
   return (
     <aside className="employer-dashboard-sidebar" id="employer-dashboard-sidebar">
+      <Link className="employer-sidebar-brand" href="/employer/dashboard">
+        <BrandMark />
+        <span>OnlineJobBoard</span>
+      </Link>
       <Link className="employer-sidebar-company" href="/employer/profile">
         <span className="employer-sidebar-avatar" aria-hidden="true">{initials(companyName)}</span>
         <span className="employer-sidebar-company-copy">

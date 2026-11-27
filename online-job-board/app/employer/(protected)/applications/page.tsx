@@ -1,25 +1,25 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import ApplicationsManager from "@/app/components/employer/ApplicationsManager";
 import EmployerDashboardHeaderTools from "@/app/components/employer/EmployerDashboardHeaderTools";
 import EmployerSidebar from "@/app/components/employer/employer-sidebar";
 import EmployerLogoutButton from "@/app/components/employer/employer-logout-button";
-import BrandMark from "@/app/components/shared/brand-mark";
 import { getEmployerSession } from "@/lib/employer-session";
 
-export default async function ApplicationsPage() {
+export default async function ApplicationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ jobId?: string | string[] }>;
+}) {
   const employer = await getEmployerSession();
   if (!employer) redirect("/employer/login");
+  const params = await searchParams;
+  const jobId = typeof params.jobId === "string" ? params.jobId : undefined;
 
   return (
     <main className="employer-dashboard employer-dashboard-home">
       <EmployerSidebar companyName={employer.companyName} currentSection="applications" />
       <header className="employer-dashboard-header">
         <div className="workspace-brand-controls">
-          <Link className="employer-brand" href="/employer/dashboard">
-            <BrandMark />
-            <span>OnlineJobBoard</span>
-          </Link>
           <EmployerDashboardHeaderTools part="sidebar" />
         </div>
         <div className="employer-dashboard-user">
@@ -28,8 +28,8 @@ export default async function ApplicationsPage() {
           <EmployerLogoutButton />
         </div>
       </header>
-      <section className="employer-dashboard-main employer-module-main">
-        <ApplicationsManager />
+      <section className="employer-dashboard-main employer-module-main employer-applications-page">
+        <ApplicationsManager jobId={jobId} />
       </section>
     </main>
   );

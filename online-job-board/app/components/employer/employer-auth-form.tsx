@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
-  BriefcaseBusiness,
   Building2,
   Eye,
   EyeOff,
@@ -12,8 +11,6 @@ import {
   Mail,
   MapPin,
   Phone,
-  UploadCloud,
-  UserRound,
 } from "lucide-react";
 import BrandMark from "@/app/components/shared/brand-mark";
 import {
@@ -27,6 +24,7 @@ import {
 type AuthMode = "login" | "register" | "forgot" | "reset";
 
 type EmployerAuthFormProps = {
+  backendMode?: boolean;
   mode: AuthMode;
   token?: string;
 };
@@ -37,8 +35,8 @@ const modeDetails: Record<AuthMode, { title: string; lead: string }> = {
     lead: "Sign in to continue to your employer workspace.",
   },
   register: {
-    title: "Create your account",
-    lead: "Set up your employer account to get started.",
+    title: "Request employer access",
+    lead: "Submit your organisation details for administrator approval.",
   },
   forgot: {
     title: "Reset your password",
@@ -50,10 +48,12 @@ const modeDetails: Record<AuthMode, { title: string; lead: string }> = {
   },
 };
 
-export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps) {
+export default function EmployerAuthForm({
+  backendMode = false,
+  mode,
+  token,
+}: EmployerAuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const [certificateName, setCertificateName] = useState("");
-  const [certificateError, setCertificateError] = useState("");
   const router = useRouter();
   const authAction = mode === "register"
     ? registerEmployer
@@ -130,6 +130,7 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
               <form
                 action={formAction}
                 className={`employer-auth-fields${mode === "register" ? " employer-auth-fields-register" : ""}`}
+                encType={mode === "register" ? "multipart/form-data" : undefined}
               >
                 {mode === "reset" && <input name="token" type="hidden" value={token ?? ""} />}
                 {mode === "register" && (
@@ -152,41 +153,19 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                 )}
                 {mode === "register" && (
                   <>
-                    <div className="employer-auth-field employer-auth-upload-field">
-                      <label className="employer-auth-field-label" htmlFor="employer-certificate">Business registration certificate</label>
-                      <label className="employer-auth-upload-control" htmlFor="employer-certificate">
-                        <UploadCloud aria-hidden="true" size={22} />
-                        <span className="employer-auth-upload-copy">
-                          <strong>Choose a file</strong>
-                          <span>{certificateName || "PDF or image, up to 5 MB"}</span>
-                        </span>
-                        <input
-                          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-                          id="employer-certificate"
-                          name="businessRegistrationCertificateFile"
-                          type="file"
-                          aria-describedby="certificate-file-hint"
-                          required
-                          onChange={(event) => {
-                            const file = event.currentTarget.files?.[0];
-                            setCertificateError("");
-                            if (file && file.size > 5 * 1024 * 1024) {
-                              event.currentTarget.value = "";
-                              setCertificateName("");
-                              setCertificateError("Choose a file that is 5 MB or smaller.");
-                              return;
-                            }
-                            setCertificateName(file?.name ?? "");
-                          }}
-                        />
-                      </label>
-                      <span className="employer-auth-hint" id="certificate-file-hint">
-                        Accepted: PDF, JPEG, PNG or WebP.
-                      </span>
-                      {certificateError && <span className="employer-auth-error" role="alert">{certificateError}</span>}
+                    <div className="employer-auth-field">
+                      <label className="employer-auth-field-label" htmlFor="employer-description">Business description</label>
+                      <textarea
+                        className="employer-auth-input"
+                        id="employer-description"
+                        name="businessDescription"
+                        minLength={2}
+                        maxLength={backendMode ? 10000 : 2000}
+                        required
+                      />
                     </div>
                     <div className="employer-auth-field">
-                      <label className="employer-auth-field-label" htmlFor="employer-address">Physical business address</label>
+                      <label className="employer-auth-field-label" htmlFor="employer-address">Business location</label>
                       <div className="employer-auth-input-wrap">
                         <MapPin aria-hidden="true" className="employer-auth-input-icon" size={18} />
                         <input
@@ -195,8 +174,8 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                           name="physicalBusinessAddress"
                           type="text"
                           autoComplete="street-address"
-                          minLength={5}
-                          maxLength={500}
+                          minLength={2}
+                          maxLength={backendMode ? 255 : 500}
                           required
                         />
                       </div>
@@ -211,41 +190,76 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                           name="companyPhone"
                           type="tel"
                           autoComplete="tel"
-                          maxLength={20}
+                          maxLength={backendMode ? 50 : 30}
                           required
                         />
                       </div>
                     </div>
+                    {backendMode && (
+                      <>
+                        <div className="employer-auth-field">
+                          <label className="employer-auth-field-label" htmlFor="employer-registration-number">Business registration number</label>
+                          <input
+                            className="employer-auth-input"
+                            id="employer-registration-number"
+                            name="registrationNumber"
+                            maxLength={80}
+                            required
+                          />
+                        </div>
+                        <div className="employer-auth-field">
+                          <label className="employer-auth-field-label" htmlFor="employer-vat-number">VAT / tax number</label>
+                          <input
+                            className="employer-auth-input"
+                            id="employer-vat-number"
+                            name="vatNumber"
+                            maxLength={80}
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
+                    {!backendMode && (
+                      <>
+                        <div className="employer-auth-field">
+                          <label className="employer-auth-field-label" htmlFor="employer-representative-name">Authorized representative</label>
+                          <input
+                            className="employer-auth-input"
+                            id="employer-representative-name"
+                            name="representativeName"
+                            autoComplete="name"
+                            minLength={2}
+                            maxLength={100}
+                            required
+                          />
+                        </div>
+                        <div className="employer-auth-field">
+                          <label className="employer-auth-field-label" htmlFor="employer-representative-position">Representative position</label>
+                          <input
+                            className="employer-auth-input"
+                            id="employer-representative-position"
+                            name="representativePosition"
+                            maxLength={100}
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
                     <div className="employer-auth-field">
-                      <label className="employer-auth-field-label" htmlFor="employer-representative-name">Authorized business representative</label>
-                      <div className="employer-auth-input-wrap">
-                        <UserRound aria-hidden="true" className="employer-auth-input-icon" size={18} />
-                        <input
-                          className="employer-auth-input"
-                          id="employer-representative-name"
-                          name="representativeName"
-                          type="text"
-                          autoComplete="name"
-                          minLength={2}
-                          maxLength={100}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="employer-auth-field">
-                      <label className="employer-auth-field-label" htmlFor="employer-representative-position">Representative&apos;s position</label>
-                      <div className="employer-auth-input-wrap">
-                        <BriefcaseBusiness aria-hidden="true" className="employer-auth-input-icon" size={18} />
-                        <input
-                          className="employer-auth-input"
-                          id="employer-representative-position"
-                          name="representativePosition"
-                          type="text"
-                          minLength={2}
-                          maxLength={100}
-                          required
-                        />
-                      </div>
+                      <label className="employer-auth-field-label" htmlFor="employer-registration-certificate">
+                        Business registration certificate
+                      </label>
+                      <input
+                        accept={backendMode ? "application/pdf,.pdf" : "application/pdf,.pdf,image/jpeg,image/png,image/webp"}
+                        className="employer-auth-input"
+                        id="employer-registration-certificate"
+                        name="businessRegistrationCertificateFile"
+                        required
+                        type="file"
+                      />
+                      <span className="employer-auth-hint">
+                        {backendMode ? "Upload a PDF, up to 5 MB." : "Upload a PDF or JPG, PNG, or WebP image, up to 5 MB."}
+                      </span>
                     </div>
                   </>
                 )}
@@ -261,7 +275,7 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
                         name="email"
                         type="email"
                         autoComplete="email"
-                        maxLength={320}
+                        maxLength={mode === "register" && backendMode ? 254 : 320}
                         disabled={loginLocked}
                         required
                       />
@@ -358,7 +372,7 @@ export default function EmployerAuthForm({ mode, token }: EmployerAuthFormProps)
               <>
                 <p className="employer-auth-switch">
                   New to OnlineJobBoard?
-                  <Link className="employer-auth-link" href="/employer/register">Create an account</Link>
+                  <Link className="employer-auth-link" href="/register">Create a job-seeker account</Link>
                 </p>
                 <p className="employer-auth-switch">
                   Administrator?
